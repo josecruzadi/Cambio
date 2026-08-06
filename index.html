@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mi Tracker — 90 Días</title>
+<title>Mi Coach — Plan Personalizado</title>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -560,6 +560,67 @@
   .wo-btn.completed { background: var(--green); color: #000; }
   .wo-check { font-size: 48px; margin-bottom: 8px; }
 
+  /* PERFIL / PLAN */
+  .choice-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 4px; }
+  .choice-grid.c3 { grid-template-columns: repeat(3,1fr); }
+  .choice-btn {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .choice-btn .cb-ico { display:block; font-size: 18px; margin-bottom: 4px; }
+  .choice-btn.sel { border-color: var(--red); color: var(--text); background: rgba(255,45,45,0.08); }
+
+  .plan-hero {
+    background: linear-gradient(160deg, rgba(255,45,45,0.12), var(--card));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .plan-hero-l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .plan-hero-v { font-family: 'Anton', sans-serif; font-size: 44px; line-height: 1; margin: 4px 0; }
+  .plan-hero-s { font-size: 12px; color: var(--muted); }
+
+  .macro-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
+  .macro-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 8px;
+    text-align: center;
+  }
+  .macro-v { font-family: 'Anton', sans-serif; font-size: 20px; }
+  .macro-l { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+
+  .split-preview { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; margin-bottom: 14px; }
+  .split-day {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 3px;
+    text-align: center;
+  }
+  .split-day.rest { opacity: 0.4; }
+  .split-day-l { font-family: 'Anton', sans-serif; font-size: 14px; }
+  .split-day-n { font-size: 7px; color: var(--muted); margin-top: 3px; text-transform: uppercase; }
+
+  .profile-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 12px; gap: 10px; }
+  .profile-summary-row:last-child { border-bottom: none; }
+  .profile-summary-row span:first-child { color: var(--muted); }
+  .profile-summary-row span:last-child { font-weight: 700; text-align: right; }
+
+  .food-calc-result { display:none; margin-top: 10px; }
+  .food-calc-result.show { display: grid; }
+
   /* COACH / CIENCIA */
   .sci-card {
     background: var(--card);
@@ -640,7 +701,7 @@
 <!-- HEADER -->
 <header>
   <div class="h-top">
-    <h1>MI <span>TRACKER</span></h1>
+    <h1>MI <span>COACH</span></h1>
     <div class="date-nav">
       <button class="date-btn" onclick="changeDay(-1)">‹</button>
       <div class="cur-date" id="curDate"><strong>Hoy</strong><span id="dateStr"></span></div>
@@ -654,28 +715,29 @@
   <div class="ds-item">
     <div class="ds-v kcal" id="sumKcal">0</div>
     <div class="ds-l">Kcal</div>
-    <div class="ds-goal">/ 1650</div>
+    <div class="ds-goal">/ <span id="goalKcal">–</span></div>
   </div>
   <div class="ds-item">
     <div class="ds-v prot" id="sumProt">0</div>
     <div class="ds-l">Prot g</div>
-    <div class="ds-goal">/ 190</div>
+    <div class="ds-goal">/ <span id="goalProt">–</span></div>
   </div>
   <div class="ds-item">
     <div class="ds-v cardio" id="sumCardio">0</div>
     <div class="ds-l">Cardio min</div>
-    <div class="ds-goal">/ 20</div>
+    <div class="ds-goal">/ <span id="goalCardio">–</span></div>
   </div>
   <div class="ds-item">
     <div class="ds-v steps" id="sumSteps">0</div>
     <div class="ds-l">Pasos</div>
-    <div class="ds-goal">/ 12k</div>
+    <div class="ds-goal">/ <span id="goalSteps">–</span></div>
   </div>
 </div>
 
 <!-- TABS -->
 <div class="tabs">
-  <div class="tab active" onclick="showTab('comidas', this)"><span class="tab-ico">🍗</span>Comidas</div>
+  <div class="tab active" id="tabPerfil" onclick="showTab('perfil', this)"><span class="tab-ico">🧑‍⚕️</span>Perfil</div>
+  <div class="tab" onclick="showTab('comidas', this)"><span class="tab-ico">🍗</span>Comidas</div>
   <div class="tab" onclick="showTab('cardio', this)"><span class="tab-ico">🔥</span>Cardio</div>
   <div class="tab" onclick="showTab('pesas', this)"><span class="tab-ico">🏋️</span>Gym</div>
   <div class="tab" onclick="showTab('peso', this)"><span class="tab-ico">📏</span>Cuerpo</div>
@@ -685,16 +747,34 @@
 
 <div class="content">
 
+  <!-- PANEL PERFIL -->
+  <div class="panel active" id="panel-perfil">
+    <div class="panel-title">Tu Plan Personalizado</div>
+    <div class="panel-sub">Cuéntame tu peso, talla y objetivo y te genero tu plan de dieta, entrenamiento y suplementos basado en evidencia</div>
+    <div id="perfilView"></div>
+  </div>
+
   <!-- PANEL COMIDAS -->
-  <div class="panel active" id="panel-comidas">
+  <div class="panel" id="panel-comidas">
     <div class="panel-title">Registro de Comidas</div>
-    <div class="panel-sub">Tu menú del día con cantidades exactas en crudo</div>
+    <div class="panel-sub">Tu meta de macros de hoy y calculadora de alimentos</div>
 
-    <div class="sub-head">🍽 Menú del plan</div>
-    <div class="quick-grid" id="planMeals"></div>
+    <div class="sub-head">🎯 Tu meta de hoy</div>
+    <div class="calc-grid" id="mealTargets"></div>
 
-    <div class="sub-head">➕ Extras sueltos</div>
-    <div class="quick-grid" id="extraMeals"></div>
+    <div class="sub-head">🧮 Calculadora de alimentos</div>
+    <div class="form-card">
+      <div class="form-row">
+        <label>Alimento</label>
+        <select id="foodSelect" onchange="calcFood()"></select>
+      </div>
+      <div class="form-row">
+        <label>Cantidad (gramos, en crudo salvo que se indique)</label>
+        <input type="number" id="foodGrams" placeholder="100" oninput="calcFood()">
+      </div>
+      <div class="calc-grid food-calc-result" id="foodCalcResult"></div>
+      <button class="btn-primary btn-green" onclick="addFoodMeal()" style="margin-top:12px;">✓ Registrar esta cantidad</button>
+    </div>
 
     <div class="sub-head">✏️ Comida personalizada</div>
     <div class="form-card">
@@ -782,12 +862,12 @@
     <div class="chart-card">
       <div class="chart-head">
         <div>
-          <div class="chart-cur" id="curWeight">96<span>kg</span></div>
+          <div class="chart-cur" id="curWeight">–<span>kg</span></div>
           <div class="chart-delta down" id="weightDelta">Inicio</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:11px;color:var(--muted);">META</div>
-          <div style="font-family:'Anton';font-size:24px;color:var(--green);">~84kg</div>
+          <div id="goalWeightLabel" style="font-family:'Anton';font-size:24px;color:var(--green);">—</div>
         </div>
       </div>
       <svg id="weightChart" viewBox="0 0 300 140" preserveAspectRatio="none"></svg>
@@ -1099,10 +1179,11 @@ function loadData() {
     try {
       const d = JSON.parse(raw);
       if (!d.measures) d.measures = [];
+      if (d.profile === undefined) d.profile = null;
       return d;
     } catch(e) {}
   }
-  return { days:{}, weights:[], workouts:{}, measures:[] };
+  return { days:{}, weights:[], workouts:{}, measures:[], profile:null };
 }
 
 function saveData() {
@@ -1152,32 +1233,6 @@ function renderDate() {
 }
 
 // ============ PLAN DATA ============
-const PLAN_MEALS = [
-  { name:'Comida 1 — Romper ayuno', time:'12:00–1:00 PM', kcal:840, prot:95, carb:75,
-    items:[
-      { ico:'🍗', w:'380g', n:'Pechuga de pollo', tip:'peso en crudo · plancha/hervida sin aceite' },
-      { ico:'🍚', w:'120g', n:'Arroz blanco', tip:'peso en crudo · rinde ~360g cocido' },
-      { ico:'🥑', w:'½ pieza', n:'Aguacate mediano', tip:'~70g' },
-      { ico:'🥦', w:'Libre', n:'Verduras verdes', tip:'brócoli, espinaca, espárragos — sin límite' },
-    ] },
-  { name:'Comida 2 — Cena', time:'7:00–8:00 PM', kcal:810, prot:98, carb:80,
-    items:[
-      { ico:'🍗', w:'350g', n:'Pechuga de pollo', tip:'peso en crudo · mismo método' },
-      { ico:'🍚', w:'100g', n:'Arroz blanco', tip:'peso en crudo · verifica sin gluten' },
-      { ico:'🍌', w:'1 grande', n:'Plátano (banana)', tip:'cómelo post-entreno' },
-      { ico:'🥤', w:'30g', n:'Proteína isolate', tip:'1 scoop en agua · sin lactosa/gluten' },
-      { ico:'🥜', w:'20g', n:'Almendras naturales', tip:'sin sal ni aceite' },
-    ] },
-  { name:'Solo pollo', time:'Extra', kcal:385, prot:72, carb:0,
-    items:[ { ico:'🍗', w:'350g', n:'Pechuga de pollo', tip:'peso en crudo' } ] },
-  { name:'Solo arroz', time:'Extra', kcal:130, prot:3, carb:28,
-    items:[ { ico:'🍚', w:'100g', n:'Arroz blanco', tip:'peso en crudo' } ] },
-  { name:'Scoop proteína', time:'Extra', kcal:115, prot:25, carb:2,
-    items:[ { ico:'🥤', w:'30g', n:'Proteína isolate', tip:'en agua' } ] },
-  { name:'Plátano', time:'Extra', kcal:120, prot:1, carb:30,
-    items:[ { ico:'🍌', w:'1 grande', n:'Plátano', tip:'post-entreno' } ] },
-];
-
 const PLAN_CARDIO = [
   { name:'Cinta post-pesas', detail:'20 min · incl 4%', min:20, kcal:160 },
   { name:'Caminata larga', detail:'50 min · zona 2', min:50, kcal:320 },
@@ -1185,19 +1240,159 @@ const PLAN_CARDIO = [
   { name:'Bici estática', detail:'25 min moderado', min:25, kcal:200 },
 ];
 
-const WORKOUTS = {
-  lunes: { name:'Torso A', muscles:'Pecho · Espalda · Hombro · Brazos', ex:['Press banca','Jalón pecho','Press militar','Remo polea','Elev. laterales','Tríceps','Curl bíceps'] },
-  martes: { name:'Pierna A', muscles:'Cuádriceps · Femoral · Pantorrilla · Core', ex:['Sentadilla/Prensa','Peso muerto rumano','Extensión cuád.','Curl femoral','Pantorrillas','Plancha'] },
-  jueves: { name:'Torso B', muscles:'Espalda · Pecho · Deltoides · Brazos', ex:['Dominadas','Press inclinado','Remo mancuerna','Cruce poleas','Pájaros','Curl + Fondos'] },
-  viernes: { name:'Pierna B', muscles:'Glúteos · Isquios · Pantorrilla · Core', ex:['Prensa','Hip Thrust','Zancadas','Curl femoral','Pantorrillas','Crunch polea'] },
-};
-// 0=domingo ... 6=sábado
-const DAY_TO_WORKOUT = { 1:'lunes', 2:'martes', 4:'jueves', 5:'viernes' };
 const DAY_LABEL = { 0:'D', 1:'L', 2:'M', 3:'X', 4:'J', 5:'V', 6:'S' };
-const REST_LABEL = { 3:'Cardio', 6:'Descanso', 0:'Descanso' };
 
-const GOAL_WEIGHT = 84;
-const START_WEIGHT = 96;
+// Alimentos comunes, macros por 100g (crudo salvo que se indique)
+const FOODS = [
+  { key:'pollo',     name:'🍗 Pechuga de pollo (cruda)',        per100:{kcal:110, prot:23,   carb:0,    fat:1.5 } },
+  { key:'arroz',     name:'🍚 Arroz blanco (crudo)',             per100:{kcal:360, prot:7,    carb:79,   fat:0.6 } },
+  { key:'huevo',     name:'🥚 Huevo entero',                     per100:{kcal:155, prot:13,   carb:1.1,  fat:11  } },
+  { key:'avena',     name:'🌾 Avena (seca)',                     per100:{kcal:389, prot:16.9, carb:66,   fat:6.9 } },
+  { key:'atun',      name:'🐟 Atún en agua (escurrido)',         per100:{kcal:116, prot:26,   carb:0,    fat:0.8 } },
+  { key:'aguacate',  name:'🥑 Aguacate',                         per100:{kcal:160, prot:2,    carb:8.5,  fat:15  } },
+  { key:'almendras', name:'🥜 Almendras',                        per100:{kcal:579, prot:21,   carb:22,   fat:50  } },
+  { key:'whey',      name:'🥤 Proteína en polvo (whey/isolate)', per100:{kcal:380, prot:80,   carb:8,    fat:5   } },
+  { key:'platano',   name:'🍌 Plátano',                          per100:{kcal:89,  prot:1.1,  carb:23,   fat:0.3 } },
+  { key:'pan',       name:'🍞 Pan integral',                     per100:{kcal:247, prot:13,   carb:41,   fat:4.2 } },
+  { key:'frijol',    name:'🫘 Frijoles negros (cocidos)',        per100:{kcal:132, prot:8.9,  carb:24,   fat:0.5 } },
+  { key:'brocoli',   name:'🥦 Brócoli',                          per100:{kcal:34,  prot:2.8,  carb:7,    fat:0.4 } },
+  { key:'papa',      name:'🥔 Papa (cruda)',                     per100:{kcal:77,  prot:2,    carb:17,   fat:0.1 } },
+  { key:'yogurt',    name:'🥛 Yogur griego natural',             per100:{kcal:59,  prot:10,   carb:3.6,  fat:0.4 } },
+  { key:'res',       name:'🥩 Carne de res magra (cruda)',       per100:{kcal:143, prot:21,   carb:0,    fat:6   } },
+];
+
+// ============ MOTOR DE PLAN (perfil -> objetivos y rutina) ============
+const ACTIVITY_LEVELS = [
+  { key:'sedentario', label:'Sedentario', ico:'🛋️', mult:1.2,   hint:'poco o nada de ejercicio' },
+  { key:'ligero',      label:'Ligero',     ico:'🚶', mult:1.375, hint:'ejercicio 1-3 días/sem' },
+  { key:'moderado',    label:'Moderado',   ico:'🏃', mult:1.55,  hint:'ejercicio 3-5 días/sem' },
+  { key:'activo',      label:'Activo',     ico:'🏋️', mult:1.725, hint:'ejercicio 6-7 días/sem' },
+  { key:'muyactivo',   label:'Muy activo', ico:'🔥', mult:1.9,   hint:'entreno intenso + trabajo físico' },
+];
+// kcalMult y proteinPerKg calibrados con la literatura citada en la pestaña Coach:
+// déficit ~15-25% (Helms 2014), superávit magro ~10% (Iraki et al. 2019), proteína 1.6-2.2 g/kg
+// en mantenimiento/superávit (Nunes 2022, Morton 2018) y 2.3-3.1 g/kg en déficit (Helms 2014).
+const GOALS = [
+  { key:'perder_grasa',   label:'Perder grasa',   ico:'🔥', kcalMult:0.78, proteinPerKg:2.4, desc:'déficit ~22%' },
+  { key:'ganar_musculo',  label:'Ganar músculo',  ico:'💪', kcalMult:1.10, proteinPerKg:1.8, desc:'superávit ~10%' },
+  { key:'recomposicion',  label:'Recomposición',  ico:'⚖️', kcalMult:0.95, proteinPerKg:2.2, desc:'déficit leve ~5%' },
+  { key:'mantener',       label:'Mantener',       ico:'🧘', kcalMult:1.0,  proteinPerKg:1.8, desc:'calorías de mantenimiento' },
+];
+
+function computeTargets(p) {
+  const bmr = p.sex === 'm'
+    ? 10*p.weight + 6.25*p.height - 5*p.age + 5
+    : 10*p.weight + 6.25*p.height - 5*p.age - 161;
+  const actLevel = ACTIVITY_LEVELS.find(a=>a.key===p.activity) || ACTIVITY_LEVELS[1];
+  const tdee = bmr * actLevel.mult;
+  const goal = GOALS.find(g=>g.key===p.goal) || GOALS[3];
+  const kcal = Math.round(tdee * goal.kcalMult);
+  const protein = Math.round(p.weight * goal.proteinPerKg);
+  let fat = Math.round((kcal*0.25)/9);
+  const fatFloor = Math.round(p.weight*0.6);
+  if (fat < fatFloor) fat = fatFloor;
+  const carbs = Math.round(Math.max(0, kcal - (protein*4 + fat*9))/4);
+  return { bmr:Math.round(bmr), tdee:Math.round(tdee), kcal, protein, fat, carbs, actLevel, goal };
+}
+
+function getDailyGoals(profile) {
+  if (!profile) return { kcal:2000, protein:150, cardioMin:20, steps:10000 };
+  const t = computeTargets(profile);
+  const cardioMin = (profile.goal === 'perder_grasa' || profile.goal === 'recomposicion') ? 30 : 15;
+  const steps = profile.activity === 'sedentario' ? 8000 : 10000;
+  return { kcal:t.kcal, protein:t.protein, cardioMin, steps };
+}
+
+function getCurrentWeight() {
+  if (DATA.weights.length) return DATA.weights[DATA.weights.length-1].kg;
+  if (DATA.profile) return DATA.profile.weight;
+  return null;
+}
+function getStartWeight() {
+  if (DATA.profile) return DATA.profile.weight;
+  return DATA.weights.length ? DATA.weights[0].kg : null;
+}
+function getGoalWeight() {
+  return (DATA.profile && DATA.profile.goalWeight) ? DATA.profile.goalWeight : null;
+}
+
+// Ejercicios agrupados por patrón, usados para armar la rutina según días/semana
+const EXERCISE_POOLS = {
+  push:   ['Press banca','Press militar','Press inclinado mancuerna','Fondos en paralelas','Elev. laterales','Extensión tríceps'],
+  pull:   ['Dominadas','Remo con barra','Jalón al pecho','Remo mancuerna','Face pull','Curl bíceps'],
+  upperA: ['Press banca','Jalón al pecho','Press militar','Remo en polea','Elev. laterales','Curl + tríceps'],
+  upperB: ['Dominadas','Press inclinado','Remo mancuerna','Cruce de poleas','Pájaros','Curl + fondos'],
+  lowerA: ['Sentadilla / prensa','Peso muerto rumano','Extensión cuádriceps','Curl femoral','Elev. pantorrillas','Plancha'],
+  lowerB: ['Prensa','Hip thrust','Zancadas','Curl femoral','Elev. pantorrillas','Crunch en polea'],
+  fullA:  ['Sentadilla','Press banca','Remo con barra','Curl femoral','Elev. laterales','Plancha'],
+  fullB:  ['Peso muerto rumano','Press militar','Jalón al pecho','Zancadas','Curl bíceps','Crunch'],
+  fullC:  ['Prensa','Press inclinado','Remo mancuerna','Hip thrust','Face pull','Elev. pantorrillas'],
+};
+
+function buildSplit(days) {
+  if (days <= 3) {
+    return [
+      { name:'Full Body A', muscles:'Cuerpo completo', ex:EXERCISE_POOLS.fullA },
+      { name:'Full Body B', muscles:'Cuerpo completo', ex:EXERCISE_POOLS.fullB },
+      { name:'Full Body C', muscles:'Cuerpo completo', ex:EXERCISE_POOLS.fullC },
+    ];
+  }
+  if (days === 4) {
+    return [
+      { name:'Torso A',  muscles:'Pecho · Espalda · Hombro · Brazos',  ex:EXERCISE_POOLS.upperA },
+      { name:'Pierna A', muscles:'Cuádriceps · Femoral · Core',        ex:EXERCISE_POOLS.lowerA },
+      { name:'Torso B',  muscles:'Espalda · Pecho · Deltoides · Brazos', ex:EXERCISE_POOLS.upperB },
+      { name:'Pierna B', muscles:'Glúteos · Isquios · Core',           ex:EXERCISE_POOLS.lowerB },
+    ];
+  }
+  if (days === 5) {
+    return [
+      { name:'Push',     muscles:'Pecho · Hombro · Tríceps',           ex:EXERCISE_POOLS.push },
+      { name:'Pull',     muscles:'Espalda · Bíceps',                   ex:EXERCISE_POOLS.pull },
+      { name:'Pierna A', muscles:'Cuádriceps · Femoral · Core',        ex:EXERCISE_POOLS.lowerA },
+      { name:'Torso B',  muscles:'Pecho · Espalda · Hombro',           ex:EXERCISE_POOLS.upperB },
+      { name:'Pierna B', muscles:'Glúteos · Isquios · Core',           ex:EXERCISE_POOLS.lowerB },
+    ];
+  }
+  return [
+    { name:'Push A',   muscles:'Pecho · Hombro · Tríceps',           ex:EXERCISE_POOLS.push },
+    { name:'Pull A',   muscles:'Espalda · Bíceps',                   ex:EXERCISE_POOLS.pull },
+    { name:'Pierna A', muscles:'Cuádriceps · Femoral · Core',        ex:EXERCISE_POOLS.lowerA },
+    { name:'Push B',   muscles:'Pecho · Hombro · Tríceps',           ex:EXERCISE_POOLS.push },
+    { name:'Pull B',   muscles:'Espalda · Bíceps',                   ex:EXERCISE_POOLS.pull },
+    { name:'Pierna B', muscles:'Glúteos · Isquios · Core',           ex:EXERCISE_POOLS.lowerB },
+  ];
+}
+
+// 0=domingo ... 6=sábado — reparte los días de entrenamiento con descanso entre medio
+const SPLIT_SCHEDULE = {
+  3: [1,3,5],
+  4: [1,2,4,5],
+  5: [1,2,3,4,5],
+  6: [1,2,3,4,5,6],
+};
+
+function getTrainingPlan(profile) {
+  const days = Math.min(6, Math.max(3, (profile && profile.days) || 4));
+  const workouts = buildSplit(days);
+  const schedule = SPLIT_SCHEDULE[days] || SPLIT_SCHEDULE[4];
+  const dayMap = {};
+  schedule.forEach((dow,i) => { dayMap[dow] = i; });
+  return { days, workouts, dayMap };
+}
+
+function supplementStack(p, t) {
+  const w = p.weight;
+  const list = [
+    { name:'Creatina monohidratada', dose:'3–5 g/día, todos los días' },
+    { name:'Cafeína pre-entreno', dose:`${Math.round(w*3)}–${Math.round(w*6)} mg, 45-60 min antes` },
+    { name:'Proteína en polvo', dose:`para llegar a ${t.protein}g/día si la comida no alcanza` },
+  ];
+  if (p.goal === 'perder_grasa' || p.days >= 5) {
+    list.push({ name:'Beta-alanina', dose:'3.2–6.4 g/día repartidos' });
+  }
+  return list;
+}
 
 // ============ TABS ============
 function showTab(name, el) {
@@ -1207,13 +1402,190 @@ function showTab(name, el) {
   document.getElementById('panel-'+name).classList.add('active');
   if (name === 'resumen') renderWeekSummary();
   if (name === 'coach') renderCoachCalc();
+  if (name === 'perfil') renderPerfil();
+}
+
+function perfilCtaCard(msg) {
+  return `<div class="empty">
+    <span class="empty-ico">🧑‍⚕️</span>${msg}
+    <div style="margin-top:14px;"><button class="btn-primary" onclick="showTab('perfil', document.getElementById('tabPerfil'))" style="width:auto;padding:12px 20px;">Completar mi perfil</button></div>
+  </div>`;
+}
+
+// ============ PERFIL / GENERADOR DE PLAN ============
+let perfilEditing = false;
+function pfPick(groupId, el) {
+  document.querySelectorAll('#'+groupId+' .choice-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function pfToggle(groupId, el) {
+  el.classList.toggle('sel');
+}
+function editPerfil() { perfilEditing = true; renderPerfil(); }
+
+function perfilFormHtml() {
+  return `
+    <div class="form-card">
+      <div class="form-row">
+        <label>Sexo</label>
+        <div class="choice-grid" id="pfSex">
+          <button type="button" class="choice-btn" data-v="m" onclick="pfPick('pfSex',this)"><span class="cb-ico">🚹</span>Hombre</button>
+          <button type="button" class="choice-btn" data-v="f" onclick="pfPick('pfSex',this)"><span class="cb-ico">🚺</span>Mujer</button>
+        </div>
+      </div>
+      <div class="form-grid2">
+        <div class="form-row"><label>Peso actual (kg)</label><input type="number" step="0.1" id="pfWeight" placeholder="80"></div>
+        <div class="form-row"><label>Talla (cm)</label><input type="number" id="pfHeight" placeholder="175"></div>
+      </div>
+      <div class="form-grid2">
+        <div class="form-row"><label>Edad</label><input type="number" id="pfAge" placeholder="28"></div>
+        <div class="form-row"><label>Peso objetivo (kg, opcional)</label><input type="number" step="0.1" id="pfGoalWeight" placeholder="opcional"></div>
+      </div>
+      <div class="form-row">
+        <label>Nivel de actividad diaria (fuera del gym)</label>
+        <div class="choice-grid c3" id="pfActivity">
+          ${ACTIVITY_LEVELS.map(a=>`<button type="button" class="choice-btn" data-v="${a.key}" onclick="pfPick('pfActivity',this)"><span class="cb-ico">${a.ico}</span>${a.label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Tu objetivo principal</label>
+        <div class="choice-grid" id="pfGoal">
+          ${GOALS.map(g=>`<button type="button" class="choice-btn" data-v="${g.key}" onclick="pfPick('pfGoal',this)"><span class="cb-ico">${g.ico}</span>${g.label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Días de entrenamiento por semana</label>
+        <div class="choice-grid c3" id="pfDays">
+          ${[3,4,5,6].map(d=>`<button type="button" class="choice-btn" data-v="${d}" onclick="pfPick('pfDays',this)">${d} días</button>`).join('')}
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Preferencias alimenticias</label>
+        <div class="choice-grid" id="pfDiet">
+          <button type="button" class="choice-btn" data-v="gluten" onclick="pfToggle('pfDiet',this)">Sin gluten</button>
+          <button type="button" class="choice-btn" data-v="lactosa" onclick="pfToggle('pfDiet',this)">Sin lactosa</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="generarPlan()">Generar mi plan</button>
+    </div>
+  `;
+}
+
+function prefillPerfilForm(p) {
+  const setSel = (groupId, v) => {
+    const btn = document.querySelector(`#${groupId} .choice-btn[data-v="${v}"]`);
+    if (btn) btn.classList.add('sel');
+  };
+  document.getElementById('pfWeight').value = p.weight;
+  document.getElementById('pfHeight').value = p.height;
+  document.getElementById('pfAge').value = p.age;
+  document.getElementById('pfGoalWeight').value = p.goalWeight || '';
+  setSel('pfSex', p.sex);
+  setSel('pfActivity', p.activity);
+  setSel('pfGoal', p.goal);
+  setSel('pfDays', p.days);
+  if (p.dietGluten) setSel('pfDiet', 'gluten');
+  if (p.dietLactose) setSel('pfDiet', 'lactosa');
+}
+
+function generarPlan() {
+  const sex = document.querySelector('#pfSex .choice-btn.sel')?.dataset.v;
+  const weight = +document.getElementById('pfWeight').value;
+  const height = +document.getElementById('pfHeight').value;
+  const age = +document.getElementById('pfAge').value;
+  const goalWeightRaw = document.getElementById('pfGoalWeight').value;
+  const activity = document.querySelector('#pfActivity .choice-btn.sel')?.dataset.v;
+  const goal = document.querySelector('#pfGoal .choice-btn.sel')?.dataset.v;
+  const daysSel = document.querySelector('#pfDays .choice-btn.sel')?.dataset.v;
+  const dietSel = [...document.querySelectorAll('#pfDiet .choice-btn.sel')].map(b=>b.dataset.v);
+  if (!sex || !weight || !height || !age || !activity || !goal || !daysSel) {
+    toast('⚠️ Completa todos los campos'); return;
+  }
+  DATA.profile = {
+    sex, weight, height, age,
+    goalWeight: goalWeightRaw ? +goalWeightRaw : null,
+    activity, goal, days: +daysSel,
+    dietGluten: dietSel.includes('gluten'),
+    dietLactose: dietSel.includes('lactosa'),
+  };
+  perfilEditing = false;
+  if (!DATA.weights.length) DATA.weights.push({ kg: weight, date: dateKey(new Date()) });
+  saveData();
+  renderPerfil();
+  renderGoals();
+  renderWorkoutPanel();
+  renderWeight();
+  renderCoachCalc();
+  renderMealTargets();
+  renderSummary();
+  toast('✓ Tu plan está listo');
+}
+
+function perfilSummaryHtml(p) {
+  const t = computeTargets(p);
+  const plan = getTrainingPlan(p);
+  const goalInfo = GOALS.find(g=>g.key===p.goal);
+  const actInfo = ACTIVITY_LEVELS.find(a=>a.key===p.activity);
+  const supp = supplementStack(p, t);
+  return `
+    <div class="plan-hero">
+      <div class="plan-hero-l">Meta calórica diaria</div>
+      <div class="plan-hero-v">${t.kcal}<span style="font-size:18px;color:var(--muted)"> kcal</span></div>
+      <div class="plan-hero-s">${goalInfo.ico} ${goalInfo.label} · ${goalInfo.desc} · TDEE ${t.tdee} kcal</div>
+    </div>
+    <div class="macro-grid">
+      <div class="macro-item"><div class="macro-v" style="color:var(--yellow)">${t.protein}g</div><div class="macro-l">Proteína</div></div>
+      <div class="macro-item"><div class="macro-v" style="color:var(--blue)">${t.carbs}g</div><div class="macro-l">Carbos</div></div>
+      <div class="macro-item"><div class="macro-v" style="color:var(--red)">${t.fat}g</div><div class="macro-l">Grasas</div></div>
+    </div>
+    <div class="sub-head">📅 Tu rutina — ${plan.days} días/semana</div>
+    <div class="split-preview">
+      ${[0,1,2,3,4,5,6].map(dow => {
+        const idx = plan.dayMap[dow];
+        const isRest = idx===undefined;
+        return `<div class="split-day ${isRest?'rest':''}">
+          <div class="split-day-l">${DAY_LABEL[dow]}</div>
+          <div class="split-day-n">${isRest ? (dow===0?'Descanso':'Cardio') : plan.workouts[idx].name.split(' ')[0]}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="sub-head">💊 Tu stack de suplementos sugerido</div>
+    <div class="chart-card">
+      ${supp.map(s=>`<div class="profile-summary-row"><span>${s.name}</span><span>${s.dose}</span></div>`).join('')}
+    </div>
+    <div class="sub-head">🧾 Tu perfil</div>
+    <div class="chart-card">
+      <div class="profile-summary-row"><span>Peso · Talla · Edad</span><span>${p.weight}kg · ${p.height}cm · ${p.age}a</span></div>
+      <div class="profile-summary-row"><span>Actividad diaria</span><span>${actInfo.ico} ${actInfo.label}</span></div>
+      <div class="profile-summary-row"><span>BMR / TDEE</span><span>${t.bmr} / ${t.tdee} kcal</span></div>
+      ${p.goalWeight ? `<div class="profile-summary-row"><span>Peso objetivo</span><span>${p.goalWeight}kg</span></div>` : ''}
+      ${(p.dietGluten||p.dietLactose) ? `<div class="profile-summary-row"><span>Preferencias</span><span>${[p.dietGluten&&'Sin gluten',p.dietLactose&&'Sin lactosa'].filter(Boolean).join(' · ')}</span></div>` : ''}
+    </div>
+    <button class="btn-primary btn-blue" onclick="editPerfil()">Editar mi perfil</button>
+    <p style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.5;">Ve la pestaña 📚 Coach para el detalle científico y las referencias detrás de estos números.</p>
+  `;
+}
+
+function renderPerfil() {
+  const cont = document.getElementById('perfilView');
+  if (!cont) return;
+  if (!DATA.profile || perfilEditing) {
+    cont.innerHTML = perfilFormHtml();
+    if (DATA.profile) prefillPerfilForm(DATA.profile);
+  } else {
+    cont.innerHTML = perfilSummaryHtml(DATA.profile);
+  }
 }
 
 // ============ COACH CALCULATOR ============
 function renderCoachCalc() {
   const cont = document.getElementById('coachCalc');
   if (!cont) return;
-  const w = DATA.weights.length ? DATA.weights[DATA.weights.length-1].kg : START_WEIGHT;
+  const w = getCurrentWeight();
+  if (!w) {
+    cont.innerHTML = perfilCtaCard('Completa tu perfil para ver tus dosis personalizadas.');
+    return;
+  }
   const proteinMin = Math.round(w*1.6), proteinMax = Math.round(w*2.2);
   const proteinDefMin = Math.round(w*2.3), proteinDefMax = Math.round(w*3.1);
   const creatineLoad = Math.round(w*0.3);
@@ -1233,46 +1605,67 @@ function renderCoachCalc() {
 }
 
 // ============ MEALS ============
-function renderPlanMeals() {
-  const mainCont = document.getElementById('planMeals');
-  const extraCont = document.getElementById('extraMeals');
-  mainCont.innerHTML = PLAN_MEALS.filter((m,i)=>i<2).map((m,i) => `
-    <div class="meal-menu-card">
-      <div class="mmc-head">
-        <div>
-          <div class="mmc-name">${m.name}</div>
-          <div class="mmc-time">${m.time} · ${m.kcal} kcal · ${m.prot}g proteína</div>
-        </div>
-      </div>
-      <div class="mmc-items">
-        ${m.items.map(it => `
-          <div class="mmc-item">
-            <div class="mmc-ico">${it.ico}</div>
-            <div class="mmc-w">${it.w}</div>
-            <div class="mmc-info">
-              <div class="mmc-iname">${it.n}</div>
-              <div class="mmc-itip">${it.tip}</div>
-            </div>
-          </div>`).join('')}
-      </div>
-      <button class="mmc-add" onclick="addPlanMeal(${i})">✓ Comí esto — registrar</button>
+function renderMealTargets() {
+  const cont = document.getElementById('mealTargets');
+  if (!cont) return;
+  if (!DATA.profile) {
+    cont.innerHTML = perfilCtaCard('Completa tu perfil para calcular tu meta diaria de macros.');
+    return;
+  }
+  const t = computeTargets(DATA.profile);
+  const day = getDayData();
+  const kcal = day.meals.reduce((s,m)=>s+(m.kcal||0),0);
+  const prot = day.meals.reduce((s,m)=>s+(m.prot||0),0);
+  const carb = day.meals.reduce((s,m)=>s+(m.carb||0),0);
+  const items = [
+    { l:'Kcal', v:`${kcal} / ${t.kcal}` },
+    { l:'Proteína', v:`${prot} / ${t.protein}g` },
+    { l:'Carbohidratos', v:`${carb} / ${t.carbs}g` },
+    { l:'Grasas (meta)', v:`${t.fat}g` },
+  ];
+  cont.innerHTML = items.map(i => `
+    <div class="calc-item">
+      <div class="calc-l">${i.l}</div>
+      <div class="calc-v">${i.v}</div>
     </div>`).join('');
-
-  extraCont.innerHTML = PLAN_MEALS.map((m,i)=>({m,i})).filter(o=>o.i>=2).map(({m,i}) => `
-    <button class="quick-btn extra-btn" onclick="addPlanMeal(${i})">
-      <div class="qb-info">
-        <div class="qb-name">${m.items[0].ico} ${m.name} <span style="color:var(--muted);font-weight:400;">${m.items[0].w}</span></div>
-        <div class="qb-macros">${m.kcal} kcal · ${m.prot}g prot</div>
-      </div>
-      <div class="qb-add">+</div>
-    </button>`).join('');
 }
-function addPlanMeal(i) {
-  const m = PLAN_MEALS[i];
-  const detail = m.items.map(it => `${it.w} ${it.n}`).join(' + ');
-  getDayData().meals.push({ name:m.name, detail, kcal:m.kcal, prot:m.prot, carb:m.carb, id:Date.now() });
-  saveData(); renderMealLog(); renderSummary();
-  toast('✓ '+m.name+' registrada');
+
+function renderFoodOptions() {
+  const sel = document.getElementById('foodSelect');
+  if (!sel) return;
+  sel.innerHTML = FOODS.map(f => `<option value="${f.key}">${f.name}</option>`).join('');
+}
+function calcFood() {
+  const key = document.getElementById('foodSelect').value;
+  const grams = +document.getElementById('foodGrams').value || 0;
+  const food = FOODS.find(f=>f.key===key);
+  const box = document.getElementById('foodCalcResult');
+  if (!food || !grams) { box.classList.remove('show'); return; }
+  const mult = grams/100;
+  const kcal = Math.round(food.per100.kcal*mult);
+  const prot = Math.round(food.per100.prot*mult*10)/10;
+  const carb = Math.round(food.per100.carb*mult*10)/10;
+  const fat = Math.round(food.per100.fat*mult*10)/10;
+  box.classList.add('show');
+  box.innerHTML = [
+    { l:'Kcal', v:kcal }, { l:'Proteína', v:prot+'g' }, { l:'Carbos', v:carb+'g' }, { l:'Grasas', v:fat+'g' },
+  ].map(i => `<div class="calc-item"><div class="calc-l">${i.l}</div><div class="calc-v">${i.v}</div></div>`).join('');
+}
+function addFoodMeal() {
+  const key = document.getElementById('foodSelect').value;
+  const grams = +document.getElementById('foodGrams').value || 0;
+  const food = FOODS.find(f=>f.key===key);
+  if (!food || !grams) { toast('⚠️ Elige un alimento y una cantidad'); return; }
+  const mult = grams/100;
+  const kcal = Math.round(food.per100.kcal*mult);
+  const prot = Math.round(food.per100.prot*mult*10)/10;
+  const carb = Math.round(food.per100.carb*mult*10)/10;
+  getDayData().meals.push({ name:`${food.name} — ${grams}g`, detail:'', kcal, prot, carb, id:Date.now() });
+  saveData();
+  document.getElementById('foodGrams').value = '';
+  document.getElementById('foodCalcResult').classList.remove('show');
+  renderMealLog(); renderSummary(); renderMealTargets();
+  toast('✓ Comida registrada');
 }
 function addCustomMeal() {
   const name = document.getElementById('mealName').value.trim();
@@ -1286,13 +1679,13 @@ function addCustomMeal() {
   document.getElementById('mealKcal').value='';
   document.getElementById('mealProt').value='';
   document.getElementById('mealCarb').value='';
-  renderMealLog(); renderSummary();
+  renderMealLog(); renderSummary(); renderMealTargets();
   toast('✓ Comida añadida');
 }
 function delMeal(id) {
   const day = getDayData();
   day.meals = day.meals.filter(m => m.id !== id);
-  saveData(); renderMealLog(); renderSummary();
+  saveData(); renderMealLog(); renderSummary(); renderMealTargets();
 }
 function renderMealLog() {
   const day = getDayData();
@@ -1362,7 +1755,8 @@ function saveSteps() {
   const v = +document.getElementById('stepsInput').value || 0;
   getDayData().steps = v;
   saveData();
-  document.getElementById('stepsBar').style.width = Math.min(100, v/12000*100)+'%';
+  const goalSteps = getDailyGoals(DATA.profile).steps;
+  document.getElementById('stepsBar').style.width = Math.min(100, v/goalSteps*100)+'%';
   renderSummary();
 }
 
@@ -1372,37 +1766,45 @@ function isWorkoutDone(dateObj) {
   return !!(DATA.workouts[k] && DATA.workouts[k].done);
 }
 function toggleWorkout() {
+  if (!DATA.profile) return;
+  const plan = getTrainingPlan(DATA.profile);
   const k = dateKey(curDateObj);
   const dow = curDateObj.getDay();
-  const woKey = DAY_TO_WORKOUT[dow];
-  if (!woKey) return; // rest day, nothing to toggle
+  const idx = plan.dayMap[dow];
+  if (idx === undefined) return; // rest/cardio day, nothing to toggle
   if (!DATA.workouts[k]) DATA.workouts[k] = {};
   DATA.workouts[k].done = !DATA.workouts[k].done;
-  DATA.workouts[k].type = woKey;
+  DATA.workouts[k].type = plan.workouts[idx].name;
   saveData();
   renderWorkoutPanel();
   toast(DATA.workouts[k].done ? '💪 ¡Entrenamiento completado!' : 'Marcado como pendiente');
 }
 function renderWorkoutPanel() {
-  const dow = curDateObj.getDay();
-  const woKey = DAY_TO_WORKOUT[dow];
   const cont = document.getElementById('workoutToday');
+  if (!DATA.profile) {
+    cont.innerHTML = perfilCtaCard('Completa tu perfil para generar tu rutina de entrenamiento.');
+    document.getElementById('weekWorkouts').innerHTML = '';
+    return;
+  }
+  const plan = getTrainingPlan(DATA.profile);
+  const dow = curDateObj.getDay();
   const k = dateKey(curDateObj);
   const done = !!(DATA.workouts[k] && DATA.workouts[k].done);
+  const idx = plan.dayMap[dow];
 
-  if (!woKey) {
+  if (idx === undefined) {
     // rest / cardio day
-    const isCardio = dow === 3;
+    const isRestFull = dow === 0;
     cont.innerHTML = `<div class="wo-card rest">
       <div class="wo-day-tag">${curDateObj.toLocaleDateString('es',{weekday:'long'})}</div>
-      <div class="wo-name" style="color:var(--muted)">${isCardio?'🚶 Día de cardio':'😴 Descanso'}</div>
-      <div class="wo-muscles">${isCardio?'Sin pesas hoy — registra tu cardio en la pestaña 🔥':'Recuperación · dormir 8h · meal prep'}</div>
+      <div class="wo-name" style="color:var(--muted)">${isRestFull?'😴 Descanso':'🚶 Cardio / descanso activo'}</div>
+      <div class="wo-muscles">${isRestFull?'Recuperación · dormir 7-9h · meal prep':'Sin pesas hoy — aprovecha para tu cardio en la pestaña 🔥'}</div>
     </div>`;
-    renderWeekWorkouts();
+    renderWeekWorkouts(plan);
     return;
   }
 
-  const w = WORKOUTS[woKey];
+  const w = plan.workouts[idx];
   cont.innerHTML = `<div class="wo-card ${done?'done':''}">
     <div class="wo-day-tag">${curDateObj.toLocaleDateString('es',{weekday:'long'})}</div>
     ${done ? '<div class="wo-check">✅</div>' : ''}
@@ -1413,24 +1815,26 @@ function renderWorkoutPanel() {
       ${done ? '✓ Completado — toca para deshacer' : 'Marcar como completado'}
     </button>
   </div>`;
-  renderWeekWorkouts();
+  renderWeekWorkouts(plan);
 }
-function renderWeekWorkouts() {
-  const days = getWeekDays ? getWeekDaysForWorkout() : [];
+function renderWeekWorkouts(plan) {
+  if (!DATA.profile) return;
+  if (!plan) plan = getTrainingPlan(DATA.profile);
+  const days = getWeekDaysForWorkout();
   const cont = document.getElementById('weekWorkouts');
   cont.innerHTML = days.map(d => {
     const dow = d.getDay();
-    const woKey = DAY_TO_WORKOUT[dow];
+    const idx = plan.dayMap[dow];
     const k = dateKey(d);
     const done = !!(DATA.workouts[k] && DATA.workouts[k].done);
-    const isRest = !woKey;
+    const isRest = idx === undefined;
     let status = '';
-    if (isRest) status = dow===3 ? '🚶' : '·';
+    if (isRest) status = dow===0 ? '·' : '🚶';
     else status = done ? '✅' : '⬜';
     return `<div class="ww-day ${done?'done':''} ${isRest?'rest-day':''}">
       <div class="ww-letter">${DAY_LABEL[dow]}</div>
       <div class="ww-status">${status}</div>
-      <div class="ww-type">${woKey ? WORKOUTS[woKey].name.split(' ')[0] : (REST_LABEL[dow]||'')}</div>
+      <div class="ww-type">${idx!==undefined ? plan.workouts[idx].name.split(' ')[0] : (dow===0?'Descanso':'Cardio')}</div>
     </div>`;
   }).join('');
 }
@@ -1471,18 +1875,25 @@ function delWeight(date) {
 function renderWeight() {
   const cont = document.getElementById('weightLog');
   const weights = DATA.weights;
+  const start = getStartWeight();
+  const goalW = getGoalWeight();
+  document.getElementById('goalWeightLabel').textContent = goalW ? '~'+goalW+'kg' : '—';
   // current weight + delta
   if (weights.length) {
     const latest = weights[weights.length-1];
     document.getElementById('curWeight').innerHTML = latest.kg + '<span>kg</span>';
-    const delta = (latest.kg - START_WEIGHT).toFixed(1);
     const el = document.getElementById('weightDelta');
-    if (delta < 0) { el.className='chart-delta down'; el.textContent = delta+'kg desde el inicio'; }
-    else if (delta > 0) { el.className='chart-delta up'; el.textContent = '+'+delta+'kg'; }
-    else { el.className='chart-delta'; el.textContent='Sin cambio'; }
+    if (start) {
+      const delta = (latest.kg - start).toFixed(1);
+      if (delta < 0) { el.className='chart-delta down'; el.textContent = delta+'kg desde el inicio'; }
+      else if (delta > 0) { el.className='chart-delta up'; el.textContent = '+'+delta+'kg'; }
+      else { el.className='chart-delta'; el.textContent='Sin cambio'; }
+    } else {
+      el.className='chart-delta'; el.textContent='';
+    }
   } else {
-    document.getElementById('curWeight').innerHTML = START_WEIGHT + '<span>kg</span>';
-    document.getElementById('weightDelta').textContent = 'Registra tu primer peso';
+    document.getElementById('curWeight').innerHTML = (start != null ? start : '–') + '<span>kg</span>';
+    document.getElementById('weightDelta').textContent = start != null ? 'Peso de tu perfil' : 'Registra tu primer peso';
   }
   // chart
   drawChart();
@@ -1507,26 +1918,30 @@ function drawChart() {
   const svg = document.getElementById('weightChart');
   const weights = DATA.weights;
   const W=300, H=140, pad=10;
+  const start = getStartWeight();
+  const goalW = getGoalWeight();
   // include start point
-  let pts = [{kg:START_WEIGHT}, ...weights.map(w=>({kg:w.kg}))];
-  if (pts.length < 2) pts = [{kg:START_WEIGHT},{kg:START_WEIGHT}];
-  const allKg = [...pts.map(p=>p.kg), GOAL_WEIGHT];
+  let pts = weights.map(w=>({kg:w.kg}));
+  if (start != null && (!pts.length || pts[0].kg !== start)) pts = [{kg:start}, ...pts];
+  if (!pts.length) { svg.innerHTML = ''; return; }
+  if (pts.length < 2) pts = [pts[0], pts[0]];
+  const allKg = [...pts.map(p=>p.kg), goalW != null ? goalW : pts[0].kg];
   const max = Math.max(...allKg)+1, min = Math.min(...allKg)-1;
   const range = max-min || 1;
   const x = i => pad + i*(W-2*pad)/(pts.length-1);
   const y = kg => pad + (max-kg)/range*(H-2*pad);
-  // goal line
-  const goalY = y(GOAL_WEIGHT);
   // path
   const path = pts.map((p,i)=>`${i===0?'M':'L'}${x(i)},${y(p.kg)}`).join(' ');
   const area = path + ` L${x(pts.length-1)},${H-pad} L${x(0)},${H-pad} Z`;
+  const goalLine = goalW != null ? `
+    <line x1="${pad}" y1="${y(goalW)}" x2="${W-pad}" y2="${y(goalW)}" stroke="#00e676" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
+    <text x="${W-pad}" y="${y(goalW)-4}" fill="#00e676" font-size="9" text-anchor="end">meta ${goalW}kg</text>` : '';
   svg.innerHTML = `
     <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ff2d2d" stop-opacity="0.3"/>
       <stop offset="100%" stop-color="#ff2d2d" stop-opacity="0"/>
     </linearGradient></defs>
-    <line x1="${pad}" y1="${goalY}" x2="${W-pad}" y2="${goalY}" stroke="#00e676" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-    <text x="${W-pad}" y="${goalY-4}" fill="#00e676" font-size="9" text-anchor="end">meta ${GOAL_WEIGHT}kg</text>
+    ${goalLine}
     <path d="${area}" fill="url(#g)"/>
     <path d="${path}" fill="none" stroke="#ff2d2d" stroke-width="2.5" stroke-linejoin="round"/>
     ${pts.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.kg)}" r="3" fill="#ff2d2d"/>`).join('')}
@@ -1666,8 +2081,16 @@ function renderMeasures() {
 }
 
 // ============ SUMMARY ============
+function renderGoals() {
+  const g = getDailyGoals(DATA.profile);
+  document.getElementById('goalKcal').textContent = g.kcal;
+  document.getElementById('goalProt').textContent = g.protein;
+  document.getElementById('goalCardio').textContent = g.cardioMin;
+  document.getElementById('goalSteps').textContent = g.steps>=1000 ? (g.steps/1000)+'k' : g.steps;
+}
 function renderSummary() {
   const day = getDayData();
+  const g = getDailyGoals(DATA.profile);
   const kcal = day.meals.reduce((s,m)=>s+(m.kcal||0),0);
   const prot = day.meals.reduce((s,m)=>s+(m.prot||0),0);
   const cardio = day.cardio.reduce((s,c)=>s+(c.min||0),0);
@@ -1676,12 +2099,15 @@ function renderSummary() {
   document.getElementById('sumCardio').textContent = cardio;
   document.getElementById('sumSteps').textContent = day.steps >= 1000 ? (day.steps/1000).toFixed(1)+'k' : day.steps;
   document.getElementById('stepsInput').value = day.steps || '';
-  document.getElementById('stepsBar').style.width = Math.min(100,(day.steps||0)/12000*100)+'%';
+  document.getElementById('stepsBar').style.width = Math.min(100,(day.steps||0)/g.steps*100)+'%';
 }
 
 // ============ RENDER ALL ============
 function renderAll() {
-  renderPlanMeals();
+  renderPerfil();
+  renderGoals();
+  renderFoodOptions();
+  renderMealTargets();
   renderMealLog();
   renderCardioQuick();
   renderCardioLog();
@@ -1693,8 +2119,9 @@ function renderAll() {
 }
 
 function resetAll() {
-  if (confirm('¿Borrar TODOS los datos? Esto no se puede deshacer.')) {
-    DATA = { days:{}, weights:[], workouts:{}, measures:[] };
+  if (confirm('¿Borrar TODOS los datos, incluido tu perfil? Esto no se puede deshacer.')) {
+    DATA = { days:{}, weights:[], workouts:{}, measures:[], profile:null };
+    perfilEditing = false;
     saveData(); renderAll();
     toast('Datos borrados');
   }
@@ -1728,6 +2155,8 @@ function getWeekDays() {
 function renderWeekSummary() {
   const days = getWeekDays();
   const first = days[0], last = days[6];
+  const g = getDailyGoals(DATA.profile);
+  const trainDays = DATA.profile ? getTrainingPlan(DATA.profile).days : 4;
   document.getElementById('weekLabel').textContent =
     weekOffset === 0 ? 'Esta semana' :
     `${first.toLocaleDateString('es',{day:'numeric',month:'short'})} – ${last.toLocaleDateString('es',{day:'numeric',month:'short'})}`;
@@ -1746,7 +2175,7 @@ function renderWeekSummary() {
     totKcal += dayKcal; totProt += dayProt; totCardio += dayCardio; totSteps += daySteps;
     if (day && day.meals.length) daysLogged++;
     if (dayCardio > 0) cardioDays++;
-    if (daySteps >= 12000) stepGoalDays++;
+    if (daySteps >= g.steps) stepGoalDays++;
     if (DATA.workouts[k] && DATA.workouts[k].done) workoutDays++;
   });
   const loggedDivisor = daysLogged || 1;
@@ -1755,8 +2184,8 @@ function renderWeekSummary() {
 
   // stat cards
   document.getElementById('weekStats').innerHTML = `
-    <div class="ws-card"><div class="ws-label">Kcal promedio/día</div><div class="ws-val r">${avgKcal||0}</div><div class="ws-sub">meta ~1650</div></div>
-    <div class="ws-card"><div class="ws-label">Proteína prom/día</div><div class="ws-val y">${avgProt||0}g</div><div class="ws-sub">meta 190g</div></div>
+    <div class="ws-card"><div class="ws-label">Kcal promedio/día</div><div class="ws-val r">${avgKcal||0}</div><div class="ws-sub">meta ~${g.kcal}</div></div>
+    <div class="ws-card"><div class="ws-label">Proteína prom/día</div><div class="ws-val y">${avgProt||0}g</div><div class="ws-sub">meta ${g.protein}g</div></div>
     <div class="ws-card"><div class="ws-label">Cardio total</div><div class="ws-val b">${totCardio}min</div><div class="ws-sub">${cardioDays} días activos</div></div>
     <div class="ws-card"><div class="ws-label">Pasos totales</div><div class="ws-val g">${totSteps>=1000?(totSteps/1000).toFixed(0)+'k':totSteps}</div><div class="ws-sub">${stepGoalDays}/7 días en meta</div></div>
   `;
@@ -1764,9 +2193,9 @@ function renderWeekSummary() {
   // adherence bars
   const adh = [
     { name:'Días con comidas registradas', val:daysLogged, max:7, color:'var(--red)' },
-    { name:'Entrenamientos completados', val:workoutDays, max:4, color:'var(--yellow)' },
+    { name:'Entrenamientos completados', val:workoutDays, max:trainDays, color:'var(--yellow)' },
     { name:'Días con cardio', val:cardioDays, max:5, color:'var(--blue)' },
-    { name:'Días meta de pasos (12k)', val:stepGoalDays, max:7, color:'var(--green)' },
+    { name:`Días meta de pasos (${g.steps>=1000?(g.steps/1000)+'k':g.steps})`, val:stepGoalDays, max:7, color:'var(--green)' },
   ];
   document.getElementById('adherence').innerHTML = adh.map(a => {
     const pct = Math.round(a.val/a.max*100);
@@ -1780,26 +2209,26 @@ function renderWeekSummary() {
   }).join('');
 
   // kcal chart
-  drawWeekChart(kcalByDay, days);
+  drawWeekChart(kcalByDay, days, g.kcal);
 }
-function drawWeekChart(data, days) {
+function drawWeekChart(data, days, goalKcal) {
   const svg = document.getElementById('weekChart');
   const W=300, H=130, pad=10, gap=6;
   const barW = (W - 2*pad - gap*6)/7;
-  const max = Math.max(2000, ...data);
-  const goalY = pad + (1 - 1650/max)*(H-2*pad-16);
+  const max = Math.max(goalKcal*1.2, ...data);
+  const goalY = pad + (1 - goalKcal/max)*(H-2*pad-16);
   let bars = '';
   data.forEach((v,i) => {
     const h = v>0 ? (v/max)*(H-2*pad-16) : 0;
     const x = pad + i*(barW+gap);
     const y = H-pad - h;
-    const over = v > 1900;
+    const over = v > goalKcal*1.15;
     const color = v===0 ? '#1e2530' : over ? '#ff2d2d' : '#ffd600';
     bars += `<rect x="${x}" y="${y}" width="${barW}" height="${h||2}" rx="3" fill="${color}"/>`;
   });
   svg.innerHTML = `
     <line x1="${pad}" y1="${goalY}" x2="${W-pad}" y2="${goalY}" stroke="#00e676" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
-    <text x="${pad}" y="${goalY-3}" fill="#00e676" font-size="8">1650 kcal</text>
+    <text x="${pad}" y="${goalY-3}" fill="#00e676" font-size="8">${goalKcal} kcal</text>
     ${bars}`;
   document.getElementById('weekDaysLabels').innerHTML =
     days.map(d => `<span>${d.toLocaleDateString('es',{weekday:'narrow'})}</span>`).join('');
@@ -1843,8 +2272,10 @@ function importData(event) {
     try {
       const imported = JSON.parse(e.target.result);
       if (!imported.days || !imported.weights) throw new Error('Formato inválido');
+      if (imported.profile === undefined) imported.profile = null;
       if (confirm('¿Reemplazar tus datos actuales con el respaldo? Se perderá lo no respaldado.')) {
         DATA = imported;
+        perfilEditing = false;
         saveData(); renderAll(); renderWeekSummary();
         toast('✓ Datos importados');
       }
