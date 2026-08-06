@@ -560,6 +560,66 @@
   .wo-btn.completed { background: var(--green); color: #000; }
   .wo-check { font-size: 48px; margin-bottom: 8px; }
 
+  /* COACH / CIENCIA */
+  .sci-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .sci-card summary {
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sci-card summary::-webkit-details-marker { display: none; }
+  .sci-card summary::after { content: '+'; color: var(--muted); font-size: 18px; }
+  .sci-card[open] summary::after { content: '–'; }
+  .sci-card[open] summary { border-bottom: 1px solid var(--border); }
+  .sci-body { padding: 4px 16px 16px; }
+  .sci-pt { margin-bottom: 12px; }
+  .sci-pt:last-child { margin-bottom: 0; }
+  .sci-pt-h { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+  .sci-pt-t { font-size: 12.5px; color: #b7bcc6; line-height: 1.55; }
+  .sci-cite { font-size: 10.5px; color: var(--muted); margin-top: 4px; font-style: italic; }
+  .tier-row { margin-bottom: 14px; }
+  .tier-row:last-child { margin-bottom: 0; }
+  .tier-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .tier-badge.t1 { background: rgba(0,230,118,0.15); color: var(--green); }
+  .tier-badge.t2 { background: rgba(255,214,0,0.15); color: var(--yellow); }
+  .tier-badge.t3 { background: rgba(90,96,112,0.25); color: var(--muted); }
+  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+  .calc-item {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .calc-l { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .calc-v { font-family: 'Anton', sans-serif; font-size: 18px; margin-top: 3px; }
+  .calc-s { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .calc-note { font-size: 11px; color: var(--muted); margin: 10px 0 16px; line-height: 1.5; }
+  .ref-list { display: grid; gap: 10px; }
+  .ref-item { font-size: 12px; line-height: 1.5; padding-bottom: 10px; border-bottom: 1px dashed var(--border); }
+  .ref-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .ref-item b { color: var(--text); }
+  .ref-item .ref-j { color: var(--muted); font-style: italic; }
+
   .week-workouts { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; }
   .ww-day {
     background: var(--card);
@@ -620,6 +680,7 @@
   <div class="tab" onclick="showTab('pesas', this)"><span class="tab-ico">🏋️</span>Gym</div>
   <div class="tab" onclick="showTab('peso', this)"><span class="tab-ico">📏</span>Cuerpo</div>
   <div class="tab" onclick="showTab('resumen', this)"><span class="tab-ico">📊</span>Resumen</div>
+  <div class="tab" onclick="showTab('coach', this)"><span class="tab-ico">📚</span>Coach</div>
 </div>
 
 <div class="content">
@@ -804,6 +865,200 @@
     </div>
   </div>
 
+  <!-- PANEL COACH / CIENCIA -->
+  <div class="panel" id="panel-coach">
+    <div class="panel-title">Asesoría Basada en Evidencia</div>
+    <div class="panel-sub">Hipertrofia, pérdida de grasa y suplementos — resumen de literatura científica actual, no opiniones</div>
+
+    <div class="sub-head">🧮 Tu calculadora personal</div>
+    <div class="calc-grid" id="coachCalc"></div>
+    <div class="calc-note">Calculado con tu último peso registrado (o tu peso inicial si aún no has pesado). Los rangos de proteína en déficit asumen un % de grasa corporal medio-alto; si ya estás delgado, usa el extremo superior.</div>
+
+    <div class="sub-head">💪 Hipertrofia (ganar músculo)</div>
+    <details class="sci-card" open>
+      <summary>Volumen semanal por músculo</summary>
+      <div class="sci-body">
+        <div class="sci-pt">
+          <div class="sci-pt-t">10–20 series duras por grupo muscular a la semana maximizan el crecimiento en la mayoría de personas. Más allá de ~20 series los retornos son decrecientes y sube el riesgo de no recuperar a tiempo. Empieza en la parte baja del rango y sube solo si recuperas bien.</div>
+          <div class="sci-cite">Schoenfeld et al. 2017, J Sports Sci · Pelland et al. 2024–25, Sports Medicine (meta-regresión, 67 estudios)</div>
+        </div>
+      </div>
+    </details>
+    <details class="sci-card">
+      <summary>Frecuencia: ¿1x o 2x por semana?</summary>
+      <div class="sci-body">
+        <div class="sci-pt">
+          <div class="sci-pt-t">Entrenar cada músculo 2 veces por semana es al menos igual de efectivo que 1 vez, para el mismo volumen total repartido. La frecuencia en sí aporta poco extra una vez igualado el volumen semanal — por eso tu rutina Torso/Pierna A-B entrena cada grupo 2x/semana.</div>
+          <div class="sci-cite">Schoenfeld et al. 2016, Sports Medicine · Pelland et al. 2024–25, Sports Medicine</div>
+        </div>
+      </div>
+    </details>
+    <details class="sci-card">
+      <summary>Intensidad y cercanía al fallo (RIR)</summary>
+      <div class="sci-body">
+        <div class="sci-pt">
+          <div class="sci-pt-t">Rangos de 30–85% de tu 1RM (aprox. 6 a 30 repeticiones) generan hipertrofia similar, siempre que la serie termine cerca del fallo (0–3 repeticiones en reserva). Con cargas muy ligeras necesitas más series para el mismo estímulo. No hay un "rango mágico" de repeticiones — sí hay un mínimo de esfuerzo.</div>
+          <div class="sci-cite">Schoenfeld et al. 2021, Int J Sport Nutr Exerc Metab</div>
+        </div>
+        <div class="sci-pt">
+          <div class="sci-pt-h">Descanso entre series</div>
+          <div class="sci-pt-t">2–3 minutos en ejercicios multiarticulares (sentadilla, press banca, remo) dan mejores ganancias de fuerza e hipertrofia que descansos menores a 1 minuto.</div>
+          <div class="sci-cite">Grgic et al. 2017, Sports Medicine</div>
+        </div>
+      </div>
+    </details>
+    <details class="sci-card">
+      <summary>Sobrecarga progresiva</summary>
+      <div class="sci-body">
+        <div class="sci-pt">
+          <div class="sci-pt-t">El motor real del crecimiento a largo plazo es aumentar poco a poco carga, series o repeticiones semana a semana. Sin progresión, aunque el volumen y la intensidad "sean correctos", el estímulo se estanca. Anota tus pesos y repeticiones cada sesión — no confíes en la memoria.</div>
+        </div>
+      </div>
+    </details>
+
+    <div class="sub-head">🔥 Pérdida de grasa</div>
+    <details class="sci-card" open>
+      <summary>Tamaño del déficit calórico</summary>
+      <div class="sci-body">
+        <div class="sci-pt">
+          <div class="sci-pt-t">Un déficit moderado (~15–25% del gasto energético total, o ~300–500 kcal/día) pierde grasa a un ritmo sostenible (~0.5–1% del peso corporal/semana), minimizando pérdida de músculo, caída de rendimiento y efectos hormonales frente a déficits agresivos.</div>
+          <div class="sci-cite">Helms, Aragon & Fitschen 2014, J Int Soc Sports Nutr</div>
+        </div>
+      </div>
+    </details>
+    <details class="sci-card">
+      <summary>Proteína alta durante el déficit</summary>
+      <div class="sci-body">
+        <div class="sci-pt">
+          <div class="sci-pt-t">Subir la proteína por encima de lo normal (2.3–3.1 g/kg) ayuda a conservar masa magra durante la restricción calórica, sobre todo combinada con entrenamiento de fuerza — cuanto más bajo tu % de grasa, más alta debe ser la proteína relativa.</div>
+          <div class="sci-cite">Helms et al. 2014, J Int Soc Sports Nutr · meta-regresión actualizada 2025 sobre proteína y masa libre de grasa en déficit</div>
+        </div>
+      </div>
+    </details>
+    <details class="sci-card">
+      <summary>No bajes el volumen de entrenamiento en dieta</summary>
+      <div class="sci-body">
+        <div class="sci-pt">
+          <div class="sci-pt-t">Mantener el volumen de entrenamiento (no solo entrenar "para mantener") durante la dieta ayuda a retener músculo. Bajar demasiado el volumen mientras estás en déficit se asocia a mayor pérdida de masa magra, aunque el peso baje igual.</div>
+        </div>
+      </div>
+    </details>
+    <details class="sci-card">
+      <summary>Cardio y pasos (NEAT)</summary>
+      <div class="sci-body">
+        <div class="sci-pt">
+          <div class="sci-pt-t">El cardio de baja-moderada intensidad (zona 2, tipo caminata inclinada o bici suave) y subir los pasos diarios crean déficit sin interferir tanto en la recuperación del entrenamiento de fuerza como el cardio de alta intensidad. Los pasos diarios son de los mejores predictores de adherencia a largo plazo — por eso tu meta de 12k pasos importa tanto como el gimnasio.</div>
+        </div>
+      </div>
+    </details>
+    <details class="sci-card">
+      <summary>Diet breaks / refeeds</summary>
+      <div class="sci-body">
+        <div class="sci-pt">
+          <div class="sci-pt-t">En fases largas de déficit, volver a calorías de mantenimiento 1–2 semanas cada 6–8 semanas de dieta ayuda a sostener la adherencia mental y puede mitigar parte de la adaptación metabólica, sin perjudicar el resultado final del proceso.</div>
+          <div class="sci-cite">Trexler, Smith-Ryan & Norton 2014, J Int Soc Sports Nutr</div>
+        </div>
+      </div>
+    </details>
+
+    <div class="sub-head">💊 Suplementos, por nivel de evidencia</div>
+    <details class="sci-card" open>
+      <summary>Nivel 1 — evidencia sólida y consistente</summary>
+      <div class="sci-body">
+        <div class="tier-row">
+          <span class="tier-badge t1">Creatina monohidratada</span>
+          <div class="sci-pt-t">3–5 g/día, todos los días (con o sin fase de carga de 0.3 g/kg/día durante 5–7 días). Mejora fuerza, volumen de entrenamiento tolerado y puede favorecer la hipertrofia a largo plazo. Es de los suplementos más estudiados y seguros que existen; dosis de hasta 30 g/día se han estudiado por años sin daño renal o hepático en población sana.</div>
+          <div class="sci-cite">Kreider et al. 2017, postura oficial ISSN, J Int Soc Sports Nutr</div>
+        </div>
+        <div class="tier-row">
+          <span class="tier-badge t1">Cafeína</span>
+          <div class="sci-pt-t">3–6 mg/kg de peso, 45–60 min antes de entrenar. Mejora fuerza, potencia y percepción de esfuerzo. Con ~2 mg/kg ya hay beneficio y menos efectos secundarios; por encima de ~9 mg/kg no hay beneficio extra y sí más efectos adversos (ansiedad, insomnio, taquicardia).</div>
+          <div class="sci-cite">Guest et al. 2021, postura ISSN sobre cafeína, J Int Soc Sports Nutr</div>
+        </div>
+        <div class="tier-row">
+          <span class="tier-badge t1">Proteína en polvo (whey / isolate)</span>
+          <div class="sci-pt-t">No es "mágica" — es solo comida líquida conveniente para llegar a tu total diario de proteína cuando la comida sólida no alcanza. Lo que determina el resultado es el total diario de proteína, no la fuente.</div>
+          <div class="sci-cite">Jäger et al. 2017, postura ISSN sobre proteína, J Int Soc Sports Nutr</div>
+        </div>
+      </div>
+    </details>
+    <details class="sci-card">
+      <summary>Nivel 2 — evidencia moderada, útil en contextos específicos</summary>
+      <div class="sci-body">
+        <div class="tier-row">
+          <span class="tier-badge t2">Beta-alanina</span>
+          <div class="sci-pt-t">3.2–6.4 g/día repartidos en el día. Mejora el rendimiento en esfuerzos de alta intensidad de 1–4 minutos (series largas, HIIT). Puede causar hormigueo (parestesia) inofensivo en la piel.</div>
+        </div>
+        <div class="tier-row">
+          <span class="tier-badge t2">Citrulina malato</span>
+          <div class="sci-pt-t">6–8 g pre-entreno. Puede aumentar ligeramente las repeticiones antes del fallo en series múltiples.</div>
+        </div>
+        <div class="tier-row">
+          <span class="tier-badge t2">Omega-3 (EPA/DHA)</span>
+          <div class="sci-pt-t">Apoyo cardiovascular y posible efecto antiinflamatorio leve. No es un quemador de grasa.</div>
+        </div>
+        <div class="tier-row">
+          <span class="tier-badge t2">Vitamina D</span>
+          <div class="sci-pt-t">Relevante solo si hay déficit real (frecuente con poca exposición solar). Pide un análisis de sangre antes de suplementar dosis altas.</div>
+        </div>
+      </div>
+    </details>
+    <details class="sci-card">
+      <summary>Nivel 3 — evidencia débil o innecesarios</summary>
+      <div class="sci-body">
+        <div class="tier-row">
+          <span class="tier-badge t3">BCAA aislados</span>
+          <div class="sci-pt-t">Sin beneficio extra sobre proteína completa/whey si tu total diario de proteína ya es adecuado.</div>
+        </div>
+        <div class="tier-row">
+          <span class="tier-badge t3">"Quemadores de grasa" / termogénicos</span>
+          <div class="sci-pt-t">Efecto real mínimo comparado con un déficit calórico bien ejecutado. Muchos productos no usan dosis clínicas de sus propios ingredientes activos.</div>
+        </div>
+        <div class="tier-row">
+          <span class="tier-badge t3">Glutamina para hipertrofia</span>
+          <div class="sci-pt-t">Sin evidencia de beneficio adicional en personas con dieta ya suficiente en proteína.</div>
+        </div>
+      </div>
+    </details>
+
+    <div class="sub-head">😴 Recuperación</div>
+    <details class="sci-card">
+      <summary>Sueño, deload y estrés</summary>
+      <div class="sci-body">
+        <div class="sci-pt">
+          <div class="sci-pt-h">Sueño</div>
+          <div class="sci-pt-t">7–9 horas por noche es la variable de recuperación más subestimada. Dormir poco reduce la síntesis de proteína muscular, empeora el rendimiento y descontrola el apetito y las decisiones de dieta.</div>
+        </div>
+        <div class="sci-pt">
+          <div class="sci-pt-h">Semana de descarga (deload)</div>
+          <div class="sci-pt-t">Cada 4–8 semanas de entrenamiento duro, baja el volumen o la intensidad ~40–50% durante una semana para disipar fatiga acumulada sin perder tus adaptaciones.</div>
+        </div>
+        <div class="sci-pt">
+          <div class="sci-pt-h">Estrés</div>
+          <div class="sci-pt-t">El estrés crónico eleva el cortisol de forma sostenida e interfiere indirectamente en la recuperación, el sueño y la adherencia a la dieta. No hay atajo — manejarlo es parte del programa, no un extra.</div>
+        </div>
+      </div>
+    </details>
+
+    <div class="sub-head">📖 Referencias</div>
+    <div class="chart-card">
+      <div class="ref-list">
+        <div class="ref-item"><b>Schoenfeld, B.J. et al. (2017).</b> Dose-response relationship between weekly resistance training volume and increases in muscle mass. <span class="ref-j">J Sports Sci.</span></div>
+        <div class="ref-item"><b>Pelland, J.C. et al. (2024–25).</b> The Resistance Training Dose Response: Meta-Regressions Exploring the Effects of Weekly Volume and Frequency on Muscle Hypertrophy and Strength Gains. <span class="ref-j">Sports Medicine.</span></div>
+        <div class="ref-item"><b>Schoenfeld, B.J. et al. (2016/2021).</b> Effects of resistance training frequency and load range on muscle hypertrophy. <span class="ref-j">Sports Medicine · Int J Sport Nutr Exerc Metab.</span></div>
+        <div class="ref-item"><b>Grgic, J. et al. (2017).</b> Effects of rest interval duration in resistance training on measures of muscular strength. <span class="ref-j">Sports Medicine.</span></div>
+        <div class="ref-item"><b>Nunes, E.A. et al. (2022).</b> Systematic review and meta-analysis of protein intake to support muscle mass and function in healthy adults. <span class="ref-j">J Cachexia Sarcopenia Muscle.</span></div>
+        <div class="ref-item"><b>Morton, R.W. et al. (2018).</b> A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength. <span class="ref-j">Br J Sports Med.</span></div>
+        <div class="ref-item"><b>Helms, E.R., Aragon, A.A., Fitschen, P.J. (2014).</b> A systematic review of dietary protein during caloric restriction in resistance trained lean athletes: a case for higher intakes. <span class="ref-j">J Int Soc Sports Nutr.</span></div>
+        <div class="ref-item"><b>Trexler, E.T., Smith-Ryan, A.E., Norton, L.E. (2014).</b> Metabolic adaptation to weight loss: implications for the athlete. <span class="ref-j">J Int Soc Sports Nutr.</span></div>
+        <div class="ref-item"><b>Kreider, R.B. et al. (2017).</b> International Society of Sports Nutrition position stand: safety and efficacy of creatine supplementation in exercise, sport, and medicine. <span class="ref-j">J Int Soc Sports Nutr.</span></div>
+        <div class="ref-item"><b>Guest, N.S. et al. (2021).</b> International Society of Sports Nutrition position stand: caffeine and exercise performance. <span class="ref-j">J Int Soc Sports Nutr.</span></div>
+        <div class="ref-item"><b>Jäger, R. et al. (2017).</b> International Society of Sports Nutrition Position Stand: protein and exercise. <span class="ref-j">J Int Soc Sports Nutr.</span></div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.5;">Esto es información educativa general, no un reemplazo de asesoría médica o nutricional individualizada. Si tienes alguna condición de salud, consulta a un profesional antes de suplementar o hacer cambios grandes de dieta.</p>
+  </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -951,6 +1206,30 @@ function showTab(name, el) {
   el.classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
   if (name === 'resumen') renderWeekSummary();
+  if (name === 'coach') renderCoachCalc();
+}
+
+// ============ COACH CALCULATOR ============
+function renderCoachCalc() {
+  const cont = document.getElementById('coachCalc');
+  if (!cont) return;
+  const w = DATA.weights.length ? DATA.weights[DATA.weights.length-1].kg : START_WEIGHT;
+  const proteinMin = Math.round(w*1.6), proteinMax = Math.round(w*2.2);
+  const proteinDefMin = Math.round(w*2.3), proteinDefMax = Math.round(w*3.1);
+  const creatineLoad = Math.round(w*0.3);
+  const caffMin = Math.round(w*3), caffMax = Math.round(w*6);
+  const items = [
+    { l:'Proteína (mantenimiento)', v:`${proteinMin}–${proteinMax}g`, s:'1.6–2.2 g/kg · Nunes 2022' },
+    { l:'Proteína (en déficit)', v:`${proteinDefMin}–${proteinDefMax}g`, s:'2.3–3.1 g/kg · Helms 2014' },
+    { l:'Creatina', v:'3–5g/día', s:`fijo, no depende del peso · carga opcional ${creatineLoad}g/día x 5-7 días` },
+    { l:'Cafeína pre-entreno', v:`${caffMin}–${caffMax}mg`, s:'3–6 mg/kg · postura ISSN 2021' },
+  ];
+  cont.innerHTML = items.map(i => `
+    <div class="calc-item">
+      <div class="calc-l">${i.l}</div>
+      <div class="calc-v">${i.v}</div>
+      <div class="calc-s">${i.s}</div>
+    </div>`).join('');
 }
 
 // ============ MEALS ============
@@ -1182,6 +1461,7 @@ function addWeight() {
   saveData();
   document.getElementById('weightInput').value='';
   renderWeight();
+  renderCoachCalc();
   toast('✓ Peso registrado');
 }
 function delWeight(date) {
@@ -1409,6 +1689,7 @@ function renderAll() {
   renderWeight();
   renderMeasures();
   renderSummary();
+  renderCoachCalc();
 }
 
 function resetAll() {
