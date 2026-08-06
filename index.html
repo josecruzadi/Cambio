@@ -344,6 +344,20 @@
   .set-row { display: grid; grid-template-columns: 30px 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 6px; }
   .set-num { font-size: 11px; color: var(--muted); text-align: center; }
   .set-input { padding: 8px 10px; font-size: 14px; text-align: center; }
+  .exlog-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
+  .exlog-save {
+    background: var(--blue);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 0 14px;
+    height: 38px;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
 
   /* CARDIO QUICK */
   .cardio-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
@@ -761,6 +775,7 @@
 
     <div class="sub-head">🎯 Tu meta de hoy</div>
     <div class="calc-grid" id="mealTargets"></div>
+    <div id="dietQuickAdd"></div>
 
     <div class="sub-head">🧮 Calculadora de alimentos</div>
     <div class="form-card">
@@ -849,6 +864,7 @@
     <div class="panel-sub">Marca tu entrenamiento del día como completado</div>
 
     <div id="workoutToday"></div>
+    <div id="exerciseLogs"></div>
 
     <div class="sub-head">📅 Esta semana</div>
     <div class="week-workouts" id="weekWorkouts"></div>
@@ -1047,8 +1063,8 @@
       <div class="sci-body">
         <div class="tier-row">
           <span class="tier-badge t1">Creatina monohidratada</span>
-          <div class="sci-pt-t">3–5 g/día, todos los días (con o sin fase de carga de 0.3 g/kg/día durante 5–7 días). Mejora fuerza, volumen de entrenamiento tolerado y puede favorecer la hipertrofia a largo plazo. Es de los suplementos más estudiados y seguros que existen; dosis de hasta 30 g/día se han estudiado por años sin daño renal o hepático en población sana.</div>
-          <div class="sci-cite">Kreider et al. 2017, postura oficial ISSN, J Int Soc Sports Nutr</div>
+          <div class="sci-pt-t">La postura clásica de la ISSN recomienda una dosis fija de 3–5 g/día (con o sin fase de carga de 0.3 g/kg/día durante 5–7 días). Como alternativa, Candow &amp; Forbes proponen escalar la dosis de mantenimiento con el peso corporal (~0.1 g/kg/día, ≈7–10 g/día para un adulto promedio) porque el pool total de creatina en el músculo escala con la masa corporal/muscular — por eso esta app usa 0.1 g/kg por encima de 50 kg, con un piso de 5–6 g/día en pesos menores. Mejora fuerza, volumen de entrenamiento tolerado y puede favorecer la hipertrofia a largo plazo. Es de los suplementos más estudiados y seguros que existen; dosis de hasta 30 g/día se han estudiado por años sin daño renal o hepático en población sana.</div>
+          <div class="sci-cite">Kreider et al. 2017, postura oficial ISSN, J Int Soc Sports Nutr · Candow &amp; Forbes, enfoque de dosis ajustada al peso corporal</div>
         </div>
         <div class="tier-row">
           <span class="tier-badge t1">Cafeína</span>
@@ -1132,6 +1148,8 @@
         <div class="ref-item"><b>Helms, E.R., Aragon, A.A., Fitschen, P.J. (2014).</b> A systematic review of dietary protein during caloric restriction in resistance trained lean athletes: a case for higher intakes. <span class="ref-j">J Int Soc Sports Nutr.</span></div>
         <div class="ref-item"><b>Trexler, E.T., Smith-Ryan, A.E., Norton, L.E. (2014).</b> Metabolic adaptation to weight loss: implications for the athlete. <span class="ref-j">J Int Soc Sports Nutr.</span></div>
         <div class="ref-item"><b>Kreider, R.B. et al. (2017).</b> International Society of Sports Nutrition position stand: safety and efficacy of creatine supplementation in exercise, sport, and medicine. <span class="ref-j">J Int Soc Sports Nutr.</span></div>
+        <div class="ref-item"><b>Candow, D.G. &amp; Forbes, S.C.</b> Enfoque de dosificación de creatina ajustada al peso corporal (~0.1 g/kg/día) como alternativa a la dosis fija de 3-5 g/día, dado que el pool de creatina escala con la masa corporal/muscular. <span class="ref-j">Aging Muscle and Bone Health Lab, Univ. of Regina.</span></div>
+        <div class="ref-item"><b>Deurenberg, P., Weststrate, J.A., Seidell, J.C. (1991).</b> Body mass index as a measure of body fatness: age- and sex-specific prediction formulas. <span class="ref-j">Br J Nutr.</span></div>
         <div class="ref-item"><b>Guest, N.S. et al. (2021).</b> International Society of Sports Nutrition position stand: caffeine and exercise performance. <span class="ref-j">J Int Soc Sports Nutr.</span></div>
         <div class="ref-item"><b>Jäger, R. et al. (2017).</b> International Society of Sports Nutrition Position Stand: protein and exercise. <span class="ref-j">J Int Soc Sports Nutr.</span></div>
       </div>
@@ -1180,10 +1198,11 @@ function loadData() {
       const d = JSON.parse(raw);
       if (!d.measures) d.measures = [];
       if (d.profile === undefined) d.profile = null;
+      if (!d.exerciseLogs) d.exerciseLogs = {};
       return d;
     } catch(e) {}
   }
-  return { days:{}, weights:[], workouts:{}, measures:[], profile:null };
+  return { days:{}, weights:[], workouts:{}, measures:[], profile:null, exerciseLogs:{} };
 }
 
 function saveData() {
@@ -1244,22 +1263,80 @@ const DAY_LABEL = { 0:'D', 1:'L', 2:'M', 3:'X', 4:'J', 5:'V', 6:'S' };
 
 // Alimentos comunes, macros por 100g (crudo salvo que se indique)
 const FOODS = [
-  { key:'pollo',     name:'🍗 Pechuga de pollo (cruda)',        per100:{kcal:110, prot:23,   carb:0,    fat:1.5 } },
-  { key:'arroz',     name:'🍚 Arroz blanco (crudo)',             per100:{kcal:360, prot:7,    carb:79,   fat:0.6 } },
-  { key:'huevo',     name:'🥚 Huevo entero',                     per100:{kcal:155, prot:13,   carb:1.1,  fat:11  } },
-  { key:'avena',     name:'🌾 Avena (seca)',                     per100:{kcal:389, prot:16.9, carb:66,   fat:6.9 } },
-  { key:'atun',      name:'🐟 Atún en agua (escurrido)',         per100:{kcal:116, prot:26,   carb:0,    fat:0.8 } },
-  { key:'aguacate',  name:'🥑 Aguacate',                         per100:{kcal:160, prot:2,    carb:8.5,  fat:15  } },
-  { key:'almendras', name:'🥜 Almendras',                        per100:{kcal:579, prot:21,   carb:22,   fat:50  } },
-  { key:'whey',      name:'🥤 Proteína en polvo (whey/isolate)', per100:{kcal:380, prot:80,   carb:8,    fat:5   } },
-  { key:'platano',   name:'🍌 Plátano',                          per100:{kcal:89,  prot:1.1,  carb:23,   fat:0.3 } },
-  { key:'pan',       name:'🍞 Pan integral',                     per100:{kcal:247, prot:13,   carb:41,   fat:4.2 } },
-  { key:'frijol',    name:'🫘 Frijoles negros (cocidos)',        per100:{kcal:132, prot:8.9,  carb:24,   fat:0.5 } },
-  { key:'brocoli',   name:'🥦 Brócoli',                          per100:{kcal:34,  prot:2.8,  carb:7,    fat:0.4 } },
-  { key:'papa',      name:'🥔 Papa (cruda)',                     per100:{kcal:77,  prot:2,    carb:17,   fat:0.1 } },
-  { key:'yogurt',    name:'🥛 Yogur griego natural',             per100:{kcal:59,  prot:10,   carb:3.6,  fat:0.4 } },
-  { key:'res',       name:'🥩 Carne de res magra (cruda)',       per100:{kcal:143, prot:21,   carb:0,    fat:6   } },
+  { key:'pollo',     name:'🍗 Pechuga de pollo (cruda)',        group:'protein', per100:{kcal:110, prot:23,   carb:0,    fat:1.5 } },
+  { key:'arroz',     name:'🍚 Arroz blanco (crudo)',             group:'carb',    per100:{kcal:360, prot:7,    carb:79,   fat:0.6 } },
+  { key:'huevo',     name:'🥚 Huevo entero',                     group:'protein', per100:{kcal:155, prot:13,   carb:1.1,  fat:11  } },
+  { key:'avena',     name:'🌾 Avena (seca)',                     group:'carb',    per100:{kcal:389, prot:16.9, carb:66,   fat:6.9 } },
+  { key:'atun',      name:'🐟 Atún en agua (escurrido)',         group:'protein', per100:{kcal:116, prot:26,   carb:0,    fat:0.8 } },
+  { key:'aguacate',  name:'🥑 Aguacate',                         group:'fat',     per100:{kcal:160, prot:2,    carb:8.5,  fat:15  } },
+  { key:'almendras', name:'🥜 Almendras',                        group:'fat',     per100:{kcal:579, prot:21,   carb:22,   fat:50  } },
+  { key:'whey',      name:'🥤 Proteína en polvo (whey/isolate)', group:'protein', per100:{kcal:380, prot:80,   carb:8,    fat:5   } },
+  { key:'platano',   name:'🍌 Plátano',                          group:'carb',    per100:{kcal:89,  prot:1.1,  carb:23,   fat:0.3 } },
+  { key:'pan',       name:'🍞 Pan integral',                     group:'carb',    per100:{kcal:247, prot:13,   carb:41,   fat:4.2 } },
+  { key:'frijol',    name:'🫘 Frijoles negros (cocidos)',        group:'carb',    per100:{kcal:132, prot:8.9,  carb:24,   fat:0.5 } },
+  { key:'brocoli',   name:'🥦 Brócoli',                          group:'veg',     per100:{kcal:34,  prot:2.8,  carb:7,    fat:0.4 } },
+  { key:'papa',      name:'🥔 Papa (cruda)',                     group:'carb',    per100:{kcal:77,  prot:2,    carb:17,   fat:0.1 } },
+  { key:'yogurt',    name:'🥛 Yogur griego natural',             group:'protein', per100:{kcal:59,  prot:10,   carb:3.6,  fat:0.4 } },
+  { key:'res',       name:'🥩 Carne de res magra (cruda)',       group:'protein', per100:{kcal:143, prot:21,   carb:0,    fat:6   } },
 ];
+const FOOD_GROUPS = [
+  { key:'protein', label:'Fuentes de proteína', ico:'🍗' },
+  { key:'carb',    label:'Fuentes de carbohidratos', ico:'🍚' },
+  { key:'fat',     label:'Fuentes de grasa', ico:'🥑' },
+];
+
+function generateMealPlan(profile, targets) {
+  const sel = {
+    protein: FOODS.filter(f => f.group==='protein' && (profile.foodsProtein||[]).includes(f.key)),
+    carb:    FOODS.filter(f => f.group==='carb'    && (profile.foodsCarb||[]).includes(f.key)),
+    fat:     FOODS.filter(f => f.group==='fat'     && (profile.foodsFat||[]).includes(f.key)),
+  };
+  if (!sel.protein.length && !sel.carb.length && !sel.fat.length) return null;
+
+  const items = [];
+  let usedProt=0, usedCarb=0, usedFat=0, usedKcal=0;
+  function allocate(foods, macroKey, targetAmount) {
+    if (!foods.length || targetAmount <= 0) return;
+    const share = targetAmount/foods.length;
+    foods.forEach(f => {
+      const per100 = f.per100[macroKey];
+      if (!per100) return;
+      const grams = Math.round((share/per100)*100);
+      if (grams <= 0) return;
+      const mult = grams/100;
+      items.push({ food:f, grams });
+      usedKcal += f.per100.kcal*mult;
+      usedProt += f.per100.prot*mult;
+      usedCarb += f.per100.carb*mult;
+      usedFat  += f.per100.fat*mult;
+    });
+  }
+  allocate(sel.protein, 'prot', targets.protein);
+  allocate(sel.carb, 'carb', Math.max(0, targets.carbs - usedCarb));
+  allocate(sel.fat, 'fat', Math.max(0, targets.fat - usedFat));
+
+  // Los alimentos de carbos/grasa también aportan algo de proteína (y viceversa),
+  // así que se reescala todo por calorías para que el total final no se dispare
+  // por encima de la meta diaria — las cantidades relativas entre alimentos se mantienen.
+  if (usedKcal > 0 && targets.kcal > 0) {
+    const scale = targets.kcal/usedKcal;
+    usedProt = usedCarb = usedFat = usedKcal = 0;
+    items.forEach(it => {
+      it.grams = Math.max(1, Math.round(it.grams*scale));
+      const mult = it.grams/100;
+      usedKcal += it.food.per100.kcal*mult;
+      usedProt += it.food.per100.prot*mult;
+      usedCarb += it.food.per100.carb*mult;
+      usedFat  += it.food.per100.fat*mult;
+    });
+  }
+
+  return {
+    items,
+    totals: { kcal:Math.round(usedKcal), prot:Math.round(usedProt), carb:Math.round(usedCarb), fat:Math.round(usedFat) },
+    missingFat: !sel.fat.length && (targets.fat - usedFat) > 8,
+  };
+}
 
 // ============ MOTOR DE PLAN (perfil -> objetivos y rutina) ============
 const ACTIVITY_LEVELS = [
@@ -1295,6 +1372,22 @@ function computeTargets(p) {
   return { bmr:Math.round(bmr), tdee:Math.round(tdee), kcal, protein, fat, carbs, actLevel, goal };
 }
 
+// IMC (peso/talla²) + % de grasa corporal estimado con la fórmula de Deurenberg
+// (usa IMC, edad y sexo — no reemplaza una medición real por pliegues, bioimpedancia o DEXA).
+function computeBodyComp(p) {
+  const heightM = p.height/100;
+  const bmi = Math.round((p.weight/(heightM*heightM))*10)/10;
+  let bmiCat;
+  if (bmi < 18.5) bmiCat = 'Bajo peso';
+  else if (bmi < 25) bmiCat = 'Normal';
+  else if (bmi < 30) bmiCat = 'Sobrepeso';
+  else bmiCat = 'Obesidad';
+  const sexFactor = p.sex === 'm' ? 1 : 0;
+  let bodyFat = 1.2*bmi + 0.23*p.age - 10.8*sexFactor - 5.4;
+  bodyFat = Math.round(Math.max(3, bodyFat)*10)/10;
+  return { bmi, bmiCat, bodyFat };
+}
+
 function getDailyGoals(profile) {
   if (!profile) return { kcal:2000, protein:150, cardioMin:20, steps:10000 };
   const t = computeTargets(profile);
@@ -1317,17 +1410,28 @@ function getGoalWeight() {
 }
 
 // Ejercicios agrupados por patrón, usados para armar la rutina según días/semana
+// Cada ejercicio se etiqueta por tipo: compuesto (multiarticular), aislado, o core.
+// El tipo determina series/reps sugeridas — ver getSetsReps().
+function ex(name, type) { return { name, type }; }
 const EXERCISE_POOLS = {
-  push:   ['Press banca','Press militar','Press inclinado mancuerna','Fondos en paralelas','Elev. laterales','Extensión tríceps'],
-  pull:   ['Dominadas','Remo con barra','Jalón al pecho','Remo mancuerna','Face pull','Curl bíceps'],
-  upperA: ['Press banca','Jalón al pecho','Press militar','Remo en polea','Elev. laterales','Curl + tríceps'],
-  upperB: ['Dominadas','Press inclinado','Remo mancuerna','Cruce de poleas','Pájaros','Curl + fondos'],
-  lowerA: ['Sentadilla / prensa','Peso muerto rumano','Extensión cuádriceps','Curl femoral','Elev. pantorrillas','Plancha'],
-  lowerB: ['Prensa','Hip thrust','Zancadas','Curl femoral','Elev. pantorrillas','Crunch en polea'],
-  fullA:  ['Sentadilla','Press banca','Remo con barra','Curl femoral','Elev. laterales','Plancha'],
-  fullB:  ['Peso muerto rumano','Press militar','Jalón al pecho','Zancadas','Curl bíceps','Crunch'],
-  fullC:  ['Prensa','Press inclinado','Remo mancuerna','Hip thrust','Face pull','Elev. pantorrillas'],
+  push:   [ex('Press banca','compound'), ex('Press militar','compound'), ex('Press inclinado mancuerna','compound'), ex('Fondos en paralelas','compound'), ex('Elev. laterales','isolation'), ex('Extensión tríceps','isolation')],
+  pull:   [ex('Dominadas','compound'), ex('Remo con barra','compound'), ex('Jalón al pecho','compound'), ex('Remo mancuerna','compound'), ex('Face pull','isolation'), ex('Curl bíceps','isolation')],
+  upperA: [ex('Press banca','compound'), ex('Jalón al pecho','compound'), ex('Press militar','compound'), ex('Remo en polea','compound'), ex('Elev. laterales','isolation'), ex('Curl + tríceps','isolation')],
+  upperB: [ex('Dominadas','compound'), ex('Press inclinado','compound'), ex('Remo mancuerna','compound'), ex('Cruce de poleas','isolation'), ex('Pájaros','isolation'), ex('Curl + fondos','isolation')],
+  lowerA: [ex('Sentadilla / prensa','compound'), ex('Peso muerto rumano','compound'), ex('Extensión cuádriceps','isolation'), ex('Curl femoral','isolation'), ex('Elev. pantorrillas','isolation'), ex('Plancha','core')],
+  lowerB: [ex('Prensa','compound'), ex('Hip thrust','compound'), ex('Zancadas','compound'), ex('Curl femoral','isolation'), ex('Elev. pantorrillas','isolation'), ex('Crunch en polea','core')],
+  fullA:  [ex('Sentadilla','compound'), ex('Press banca','compound'), ex('Remo con barra','compound'), ex('Curl femoral','isolation'), ex('Elev. laterales','isolation'), ex('Plancha','core')],
+  fullB:  [ex('Peso muerto rumano','compound'), ex('Press militar','compound'), ex('Jalón al pecho','compound'), ex('Zancadas','compound'), ex('Curl bíceps','isolation'), ex('Crunch','core')],
+  fullC:  [ex('Prensa','compound'), ex('Press inclinado','compound'), ex('Remo mancuerna','compound'), ex('Hip thrust','compound'), ex('Face pull','isolation'), ex('Elev. pantorrillas','isolation')],
 };
+
+// Series y repeticiones sugeridas por tipo de ejercicio y objetivo — dentro del
+// rango de 10-20 series/músculo/semana e intensidad cercana al fallo citados en 📚 Coach.
+function getSetsReps(type, goal) {
+  if (type === 'core') return { sets:3, reps:'30-45s' };
+  if (type === 'compound') return { sets: goal==='ganar_musculo' ? 4 : 3, reps:'6-10' };
+  return { sets: goal==='ganar_musculo' ? 3 : 3, reps:'10-15' };
+}
 
 function buildSplit(days) {
   if (days <= 3) {
@@ -1381,10 +1485,24 @@ function getTrainingPlan(profile) {
   return { days, workouts, dayMap };
 }
 
+// Dosis de creatina escalada por peso corporal: para pesos >50kg, 0.1 g/kg/día
+// (enfoque de Candow & Forbes como alternativa a la dosis fija, ya que el pool total
+// de creatina escala con la masa muscular/corporal); en ≤50kg se mantiene el piso
+// clásico de 5-6 g/día porque 0.1 g/kg cae por debajo de la dosis mínima efectiva.
+function getCreatineDose(w) {
+  if (!w) return { label:'3–5 g/día', sub:'dosis estándar' };
+  if (w > 50) {
+    const g = Math.round(w*0.1*10)/10;
+    return { label:`${g} g/día`, sub:'0.1 g/kg de peso · Candow & Forbes' };
+  }
+  return { label:'5–6 g/día', sub:'piso mínimo efectivo (peso ≤50kg)' };
+}
+
 function supplementStack(p, t) {
   const w = p.weight;
+  const creatine = getCreatineDose(w);
   const list = [
-    { name:'Creatina monohidratada', dose:'3–5 g/día, todos los días' },
+    { name:'Creatina monohidratada', dose:`${creatine.label} · ${creatine.sub}` },
     { name:'Cafeína pre-entreno', dose:`${Math.round(w*3)}–${Math.round(w*6)} mg, 45-60 min antes` },
     { name:'Proteína en polvo', dose:`para llegar a ${t.protein}g/día si la comida no alcanza` },
   ];
@@ -1466,6 +1584,13 @@ function perfilFormHtml() {
           <button type="button" class="choice-btn" data-v="lactosa" onclick="pfToggle('pfDiet',this)">Sin lactosa</button>
         </div>
       </div>
+      ${FOOD_GROUPS.map(g => `
+      <div class="form-row">
+        <label>${g.ico} ${g.label} <span style="text-transform:none;color:#3a4050;font-weight:400;">— elige las que sí quieres comer</span></label>
+        <div class="choice-grid c3" id="pfFoods_${g.key}">
+          ${FOODS.filter(f=>f.group===g.key).map(f=>`<button type="button" class="choice-btn" data-v="${f.key}" onclick="pfToggle('pfFoods_${g.key}',this)">${f.name}</button>`).join('')}
+        </div>
+      </div>`).join('')}
       <button class="btn-primary" onclick="generarPlan()">Generar mi plan</button>
     </div>
   `;
@@ -1486,6 +1611,9 @@ function prefillPerfilForm(p) {
   setSel('pfDays', p.days);
   if (p.dietGluten) setSel('pfDiet', 'gluten');
   if (p.dietLactose) setSel('pfDiet', 'lactosa');
+  (p.foodsProtein||[]).forEach(k => setSel('pfFoods_protein', k));
+  (p.foodsCarb||[]).forEach(k => setSel('pfFoods_carb', k));
+  (p.foodsFat||[]).forEach(k => setSel('pfFoods_fat', k));
 }
 
 function generarPlan() {
@@ -1498,6 +1626,9 @@ function generarPlan() {
   const goal = document.querySelector('#pfGoal .choice-btn.sel')?.dataset.v;
   const daysSel = document.querySelector('#pfDays .choice-btn.sel')?.dataset.v;
   const dietSel = [...document.querySelectorAll('#pfDiet .choice-btn.sel')].map(b=>b.dataset.v);
+  const foodsProtein = [...document.querySelectorAll('#pfFoods_protein .choice-btn.sel')].map(b=>b.dataset.v);
+  const foodsCarb = [...document.querySelectorAll('#pfFoods_carb .choice-btn.sel')].map(b=>b.dataset.v);
+  const foodsFat = [...document.querySelectorAll('#pfFoods_fat .choice-btn.sel')].map(b=>b.dataset.v);
   if (!sex || !weight || !height || !age || !activity || !goal || !daysSel) {
     toast('⚠️ Completa todos los campos'); return;
   }
@@ -1507,6 +1638,7 @@ function generarPlan() {
     activity, goal, days: +daysSel,
     dietGluten: dietSel.includes('gluten'),
     dietLactose: dietSel.includes('lactosa'),
+    foodsProtein, foodsCarb, foodsFat,
   };
   perfilEditing = false;
   if (!DATA.weights.length) DATA.weights.push({ kg: weight, date: dateKey(new Date()) });
@@ -1521,8 +1653,28 @@ function generarPlan() {
   toast('✓ Tu plan está listo');
 }
 
+function suggestedDietHtml(p, t) {
+  const diet = generateMealPlan(p, t);
+  if (!diet || !diet.items.length) {
+    return `
+      <div class="sub-head">🍽 Tu dieta sugerida</div>
+      <div class="empty" style="margin-bottom:16px;">
+        <span class="empty-ico">🥗</span>Elige tus alimentos preferidos (proteína, carbos, grasas) en "Editar mi perfil" para que te arme la dieta.
+      </div>`;
+  }
+  return `
+    <div class="sub-head">🍽 Tu dieta sugerida — hoy</div>
+    <div class="chart-card">
+      ${diet.items.map(it => `<div class="profile-summary-row"><span>${it.food.name}</span><span>${it.grams}g</span></div>`).join('')}
+      <div class="profile-summary-row" style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px;"><span>Total aprox.</span><span>${diet.totals.kcal} kcal · ${diet.totals.prot}g P · ${diet.totals.carb}g C · ${diet.totals.fat}g G</span></div>
+    </div>
+    ${diet.missingFat ? '<p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">Te faltan grasas por cubrir — elige una fuente de grasa (aguacate, almendras) en tu perfil.</p>' : ''}
+    <p style="font-size:11px;color:var(--muted);margin:${diet.missingFat?'0':'-8px'} 0 14px;line-height:1.5;">Repártelo en tus comidas del día como prefieras. Ve a 🍗 Comidas para registrarlo con un toque.</p>`;
+}
+
 function perfilSummaryHtml(p) {
   const t = computeTargets(p);
+  const bc = computeBodyComp(p);
   const plan = getTrainingPlan(p);
   const goalInfo = GOALS.find(g=>g.key===p.goal);
   const actInfo = ACTIVITY_LEVELS.find(a=>a.key===p.activity);
@@ -1538,6 +1690,13 @@ function perfilSummaryHtml(p) {
       <div class="macro-item"><div class="macro-v" style="color:var(--blue)">${t.carbs}g</div><div class="macro-l">Carbos</div></div>
       <div class="macro-item"><div class="macro-v" style="color:var(--red)">${t.fat}g</div><div class="macro-l">Grasas</div></div>
     </div>
+    <div class="sub-head">🧬 Composición corporal estimada</div>
+    <div class="macro-grid">
+      <div class="macro-item"><div class="macro-v">${bc.bmi}</div><div class="macro-l">IMC · ${bc.bmiCat}</div></div>
+      <div class="macro-item" style="grid-column: span 2;"><div class="macro-v">${bc.bodyFat}%</div><div class="macro-l">Grasa corporal estimada</div></div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">Estimado con la fórmula de Deurenberg (IMC + edad + sexo) — no reemplaza una medición real por pliegues, bioimpedancia o DEXA.</p>
+    ${suggestedDietHtml(p, t)}
     <div class="sub-head">📅 Tu rutina — ${plan.days} días/semana</div>
     <div class="split-preview">
       ${[0,1,2,3,4,5,6].map(dow => {
@@ -1589,11 +1748,12 @@ function renderCoachCalc() {
   const proteinMin = Math.round(w*1.6), proteinMax = Math.round(w*2.2);
   const proteinDefMin = Math.round(w*2.3), proteinDefMax = Math.round(w*3.1);
   const creatineLoad = Math.round(w*0.3);
+  const creatine = getCreatineDose(w);
   const caffMin = Math.round(w*3), caffMax = Math.round(w*6);
   const items = [
     { l:'Proteína (mantenimiento)', v:`${proteinMin}–${proteinMax}g`, s:'1.6–2.2 g/kg · Nunes 2022' },
     { l:'Proteína (en déficit)', v:`${proteinDefMin}–${proteinDefMax}g`, s:'2.3–3.1 g/kg · Helms 2014' },
-    { l:'Creatina', v:'3–5g/día', s:`fijo, no depende del peso · carga opcional ${creatineLoad}g/día x 5-7 días` },
+    { l:'Creatina', v:creatine.label, s:`${creatine.sub} · carga opcional ${creatineLoad}g/día x 5-7 días` },
     { l:'Cafeína pre-entreno', v:`${caffMin}–${caffMax}mg`, s:'3–6 mg/kg · postura ISSN 2021' },
   ];
   cont.innerHTML = items.map(i => `
@@ -1615,8 +1775,8 @@ function renderMealTargets() {
   const t = computeTargets(DATA.profile);
   const day = getDayData();
   const kcal = day.meals.reduce((s,m)=>s+(m.kcal||0),0);
-  const prot = day.meals.reduce((s,m)=>s+(m.prot||0),0);
-  const carb = day.meals.reduce((s,m)=>s+(m.carb||0),0);
+  const prot = Math.round(day.meals.reduce((s,m)=>s+(m.prot||0),0)*10)/10;
+  const carb = Math.round(day.meals.reduce((s,m)=>s+(m.carb||0),0)*10)/10;
   const items = [
     { l:'Kcal', v:`${kcal} / ${t.kcal}` },
     { l:'Proteína', v:`${prot} / ${t.protein}g` },
@@ -1628,6 +1788,36 @@ function renderMealTargets() {
       <div class="calc-l">${i.l}</div>
       <div class="calc-v">${i.v}</div>
     </div>`).join('');
+  renderDietQuickAdd(t);
+}
+
+function renderDietQuickAdd(t) {
+  const cont = document.getElementById('dietQuickAdd');
+  if (!cont) return;
+  const diet = generateMealPlan(DATA.profile, t);
+  if (!diet || !diet.items.length) { cont.innerHTML = ''; return; }
+  cont.innerHTML = `<button class="btn-primary btn-green" style="margin:-6px 0 16px;" onclick="logSuggestedDiet()">🍽 Registrar mi dieta sugerida de hoy</button>`;
+}
+
+function logSuggestedDiet() {
+  const t = computeTargets(DATA.profile);
+  const diet = generateMealPlan(DATA.profile, t);
+  if (!diet || !diet.items.length) return;
+  const day = getDayData();
+  diet.items.forEach((it, i) => {
+    const mult = it.grams/100;
+    day.meals.push({
+      name: `${it.food.name} — ${it.grams}g`,
+      detail: '',
+      kcal: Math.round(it.food.per100.kcal*mult),
+      prot: Math.round(it.food.per100.prot*mult*10)/10,
+      carb: Math.round(it.food.per100.carb*mult*10)/10,
+      id: Date.now()+i,
+    });
+  });
+  saveData();
+  renderMealLog(); renderSummary(); renderMealTargets();
+  toast('✓ Dieta sugerida registrada');
 }
 
 function renderFoodOptions() {
@@ -1800,6 +1990,7 @@ function renderWorkoutPanel() {
       <div class="wo-name" style="color:var(--muted)">${isRestFull?'😴 Descanso':'🚶 Cardio / descanso activo'}</div>
       <div class="wo-muscles">${isRestFull?'Recuperación · dormir 7-9h · meal prep':'Sin pesas hoy — aprovecha para tu cardio en la pestaña 🔥'}</div>
     </div>`;
+    document.getElementById('exerciseLogs').innerHTML = '';
     renderWeekWorkouts(plan);
     return;
   }
@@ -1810,12 +2001,67 @@ function renderWorkoutPanel() {
     ${done ? '<div class="wo-check">✅</div>' : ''}
     <div class="wo-name">${w.name}</div>
     <div class="wo-muscles">${w.muscles}</div>
-    <div class="wo-ex-preview">${w.ex.map(e=>`<span class="wo-chip">${e}</span>`).join('')}</div>
+    <div class="wo-ex-preview">${w.ex.map(e=>`<span class="wo-chip">${e.name}</span>`).join('')}</div>
     <button class="wo-btn ${done?'completed':'todo'}" onclick="toggleWorkout()">
       ${done ? '✓ Completado — toca para deshacer' : 'Marcar como completado'}
     </button>
   </div>`;
+  document.getElementById('exerciseLogs').innerHTML = exerciseLogRowsHtml(w.ex, DATA.profile.goal);
   renderWeekWorkouts(plan);
+}
+
+function exerciseLogRowsHtml(exercises, goal) {
+  return `<div class="sub-head">🏋️ Series de hoy — registra tu peso top</div>` + exercises.map((exObj, i) => {
+    const sr = getSetsReps(exObj.type, goal);
+    const pr = getExercisePR(exObj.name);
+    const today = getExerciseLogToday(exObj.name);
+    if (exObj.type === 'core') {
+      return `<div class="ex-log">
+        <div class="ex-log-name">${exObj.name} <span class="ex-log-target">${sr.sets}x${sr.reps}</span></div>
+      </div>`;
+    }
+    return `<div class="ex-log">
+      <div class="ex-log-name">${exObj.name} <span class="ex-log-target">${sr.sets}x${sr.reps}${pr?` · PR ${pr}kg`:''}</span></div>
+      <div class="exlog-row">
+        <input type="number" step="0.5" class="set-input" placeholder="peso top (kg)" id="exW_${i}" value="${today?today.weight:''}">
+        <input type="number" class="set-input" placeholder="reps" id="exR_${i}" value="${today?today.reps:''}">
+        <button class="exlog-save" onclick="saveExerciseLog(${i})">Guardar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveExerciseLog(i) {
+  if (!DATA.profile) return;
+  const plan = getTrainingPlan(DATA.profile);
+  const dow = curDateObj.getDay();
+  const idx = plan.dayMap[dow];
+  if (idx === undefined) return;
+  const exObj = plan.workouts[idx].ex[i];
+  if (!exObj) return;
+  const weight = +document.getElementById('exW_'+i).value || 0;
+  const reps = +document.getElementById('exR_'+i).value || 0;
+  if (!weight || !reps) { toast('⚠️ Ingresa peso y repeticiones'); return; }
+  const k = dateKey(curDateObj);
+  if (!DATA.exerciseLogs) DATA.exerciseLogs = {};
+  if (!DATA.exerciseLogs[exObj.name]) DATA.exerciseLogs[exObj.name] = [];
+  const logs = DATA.exerciseLogs[exObj.name];
+  const existing = logs.find(l => l.date === k);
+  if (existing) { existing.weight = weight; existing.reps = reps; }
+  else { logs.push({ date:k, weight, reps }); logs.sort((a,b)=>a.date.localeCompare(b.date)); }
+  saveData();
+  renderWorkoutPanel();
+  toast('✓ Serie registrada');
+}
+function getExercisePR(name) {
+  const logs = (DATA.exerciseLogs && DATA.exerciseLogs[name]) || [];
+  if (!logs.length) return null;
+  return Math.max(...logs.map(l=>l.weight));
+}
+function getExerciseLogToday(name) {
+  const k = dateKey(curDateObj);
+  const logs = (DATA.exerciseLogs && DATA.exerciseLogs[name]) || [];
+  return logs.find(l => l.date === k) || null;
 }
 function renderWeekWorkouts(plan) {
   if (!DATA.profile) return;
@@ -2092,7 +2338,7 @@ function renderSummary() {
   const day = getDayData();
   const g = getDailyGoals(DATA.profile);
   const kcal = day.meals.reduce((s,m)=>s+(m.kcal||0),0);
-  const prot = day.meals.reduce((s,m)=>s+(m.prot||0),0);
+  const prot = Math.round(day.meals.reduce((s,m)=>s+(m.prot||0),0)*10)/10;
   const cardio = day.cardio.reduce((s,c)=>s+(c.min||0),0);
   document.getElementById('sumKcal').textContent = kcal;
   document.getElementById('sumProt').textContent = prot;
@@ -2120,7 +2366,7 @@ function renderAll() {
 
 function resetAll() {
   if (confirm('¿Borrar TODOS los datos, incluido tu perfil? Esto no se puede deshacer.')) {
-    DATA = { days:{}, weights:[], workouts:{}, measures:[], profile:null };
+    DATA = { days:{}, weights:[], workouts:{}, measures:[], profile:null, exerciseLogs:{} };
     perfilEditing = false;
     saveData(); renderAll();
     toast('Datos borrados');
@@ -2273,6 +2519,7 @@ function importData(event) {
       const imported = JSON.parse(e.target.result);
       if (!imported.days || !imported.weights) throw new Error('Formato inválido');
       if (imported.profile === undefined) imported.profile = null;
+      if (!imported.exerciseLogs) imported.exerciseLogs = {};
       if (confirm('¿Reemplazar tus datos actuales con el respaldo? Se perderá lo no respaldado.')) {
         DATA = imported;
         perfilEditing = false;
