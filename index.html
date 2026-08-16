@@ -1306,6 +1306,15 @@ function formatFoodQty(food, grams) {
   }
   return `${grams}g`;
 }
+// Igual que formatFoodQty pero para totales semanales (más grandes) — usa kg cuando conviene.
+function formatShoppingQty(food, grams) {
+  const kgStr = grams >= 1000 ? (grams/1000).toFixed(grams>=10000?0:1)+' kg' : Math.round(grams)+'g';
+  if (food.unitGrams) {
+    const units = Math.round(grams/food.unitGrams);
+    return `${units} ${food.unitLabel}${units===1?'':'s'} (~${kgStr})`;
+  }
+  return kgStr;
+}
 
 // Elige un solo alimento del grupo para el día (rotando entre los elegidos), en vez de
 // repartir el mismo día entre todos — nadie come arroz Y papa Y avena el mismo día en
@@ -1822,6 +1831,35 @@ function suggestedDietHtml(p, t) {
     <p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">Cada comida ya trae su porción — ve a 🍗 Comidas para registrarla con un toque.</p>`;
 }
 
+// Suma la dieta sugerida de los 7 días de la semana (lunes a domingo) que contiene
+// la fecha actual, respetando la rotación diaria de carbohidrato/grasa — así la
+// lista refleja cuánto comprar de cada cosa, no solo el día de hoy multiplicado x7.
+function computeWeeklyShoppingList(profile) {
+  const t = computeTargets(profile);
+  const days = getWeekDaysForWorkout();
+  const totals = new Map();
+  days.forEach(d => {
+    const diet = generateMealPlan(profile, t, d);
+    if (!diet) return;
+    diet.items.forEach(it => totals.set(it.food.key, (totals.get(it.food.key)||0) + it.grams));
+  });
+  const groupOrder = { protein:0, carb:1, fat:2 };
+  return [...totals.entries()]
+    .map(([key, grams]) => ({ food: FOODS.find(f=>f.key===key), grams }))
+    .sort((a,b) => (groupOrder[a.food.group]-groupOrder[b.food.group]) || a.food.name.localeCompare(b.food.name));
+}
+
+function shoppingListHtml(p) {
+  const list = computeWeeklyShoppingList(p);
+  if (!list.length) return '';
+  return `
+    <div class="sub-head">🛒 Lista de compras — esta semana</div>
+    <div class="chart-card">
+      ${list.map(it => `<div class="profile-summary-row"><span>${it.food.name}</span><span>${formatShoppingQty(it.food, it.grams)}</span></div>`).join('')}
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin:8px 0 14px;line-height:1.5;">Suma tu dieta sugerida de lunes a domingo, ya con la rotación de carbohidrato/grasa incluida — no es el día de hoy multiplicado por 7.</p>`;
+}
+
 function perfilSummaryHtml(p) {
   const t = computeTargets(p);
   const bc = computeBodyComp(p);
@@ -1853,6 +1891,7 @@ function perfilSummaryHtml(p) {
     </div>
     <p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">Estimado con la fórmula de Deurenberg (IMC + edad + sexo) — no reemplaza una medición real por pliegues, bioimpedancia o DEXA.</p>
     ${suggestedDietHtml(p, t)}
+    ${shoppingListHtml(p)}
     <div class="sub-head">📅 Tu rutina — ${plan.days} días/semana</div>
     <div class="split-preview">
       ${[0,1,2,3,4,5,6].map(dow => {
