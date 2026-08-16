@@ -1307,11 +1307,22 @@ function formatFoodQty(food, grams) {
   return `${grams}g`;
 }
 
-function generateMealPlan(profile, targets) {
+// Elige un solo alimento del grupo para el día (rotando entre los elegidos), en vez de
+// repartir el mismo día entre todos — nadie come arroz Y papa Y avena el mismo día en
+// porciones de 18g cada una; tiene más sentido alternar día por día.
+function pickFoodForDay(foods, dateObj) {
+  if (foods.length <= 1) return foods;
+  const dayIndex = Math.floor(dateObj.getTime()/86400000);
+  const idx = ((dayIndex % foods.length) + foods.length) % foods.length;
+  return [foods[idx]];
+}
+
+function generateMealPlan(profile, targets, dateObj) {
+  dateObj = dateObj || curDateObj;
   const sel = {
     protein: FOODS.filter(f => f.group==='protein' && (profile.foodsProtein||[]).includes(f.key)),
-    carb:    FOODS.filter(f => f.group==='carb'    && (profile.foodsCarb||[]).includes(f.key)),
-    fat:     FOODS.filter(f => f.group==='fat'     && (profile.foodsFat||[]).includes(f.key)),
+    carb:    pickFoodForDay(FOODS.filter(f => f.group==='carb' && (profile.foodsCarb||[]).includes(f.key)), dateObj),
+    fat:     pickFoodForDay(FOODS.filter(f => f.group==='fat'  && (profile.foodsFat||[]).includes(f.key)), dateObj),
   };
   if (!sel.protein.length && !sel.carb.length && !sel.fat.length) return null;
 
@@ -1790,6 +1801,11 @@ function suggestedDietHtml(p, t) {
       ? `<p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">🥚 El huevo/clara se topa en 8 unidades/día — te faltan ~${Math.round(shortfall)}g de proteína. Agrega otra fuente de proteína (pollo, atún, whey) en tu perfil para cubrirlo.</p>`
       : `<p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">🥚 El huevo/clara se topa en 8 unidades/día — el resto de tu proteína ya sale de tus otras fuentes.</p>`;
   }
+  const rotatingCarb = (p.foodsCarb||[]).length > 1;
+  const rotatingFat = (p.foodsFat||[]).length > 1;
+  const rotateNote = (rotatingCarb || rotatingFat)
+    ? `<p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">🔄 Tu ${[rotatingCarb&&'carbohidrato',rotatingFat&&'grasa'].filter(Boolean).join(' y ')} de hoy rota entre tus alimentos elegidos — mañana puede tocar otro, en vez de mezclar todos el mismo día en porciones chicas.</p>`
+    : '';
   return `
     <div class="sub-head">🍽 Tu dieta sugerida — ${DIET_MEALS_COUNT} comidas</div>
     ${meals.map((meal, i) => !meal.length ? '' : `
@@ -1801,6 +1817,7 @@ function suggestedDietHtml(p, t) {
       <div class="profile-summary-row"><span>Total del día</span><span>${diet.totals.kcal} kcal · ${diet.totals.prot}g P · ${diet.totals.carb}g C · ${diet.totals.fat}g G</span></div>
     </div>
     ${eggNote}
+    ${rotateNote}
     ${diet.missingFat ? '<p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">Te faltan grasas por cubrir — elige una fuente de grasa (aguacate, almendras) en tu perfil.</p>' : ''}
     <p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">Cada comida ya trae su porción — ve a 🍗 Comidas para registrarla con un toque.</p>`;
 }
