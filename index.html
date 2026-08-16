@@ -825,9 +825,12 @@
   <!-- PANEL CARDIO -->
   <div class="panel" id="panel-cardio">
     <div class="panel-title">Registro de Cardio</div>
-    <div class="panel-sub">Toca un atajo o registra cardio + pasos del día</div>
+    <div class="panel-sub">Tu cardio recomendado y el registro de lo que realmente hiciste</div>
 
-    <div class="sub-head">⚡ Atajos del plan</div>
+    <div class="sub-head">🎯 Cardio recomendado para tu plan</div>
+    <div id="cardioPlanCard"></div>
+
+    <div class="sub-head">⚡ Atajos rápidos</div>
     <div class="cardio-quick" id="cardioQuick"></div>
 
     <div class="sub-head">➕ Cardio personalizado</div>
@@ -1274,8 +1277,8 @@ const DAY_LABEL = { 0:'D', 1:'L', 2:'M', 3:'X', 4:'J', 5:'V', 6:'S' };
 const FOODS = [
   { key:'pollo',     name:'🍗 Pechuga de pollo (cruda)',        group:'protein', per100:{kcal:110, prot:23,   carb:0,    fat:1.5 } },
   { key:'arroz',     name:'🍚 Arroz blanco (crudo)',             group:'carb',    per100:{kcal:360, prot:7,    carb:79,   fat:0.6 } },
-  { key:'huevo',     name:'🥚 Huevo entero',                     group:'protein', unitGrams:50, unitLabel:'huevo', per100:{kcal:155, prot:13,   carb:1.1,  fat:11  } },
-  { key:'clara',     name:'🥚 Clara de huevo (sin yema)',        group:'protein', unitGrams:33, unitLabel:'clara', per100:{kcal:52,  prot:11,   carb:0.7,  fat:0.2 } },
+  { key:'huevo',     name:'🥚 Huevo entero',                     group:'protein', unitGrams:50, unitLabel:'huevo', maxUnits:8, per100:{kcal:155, prot:13,   carb:1.1,  fat:11  } },
+  { key:'clara',     name:'🥚 Clara de huevo (sin yema)',        group:'protein', unitGrams:33, unitLabel:'clara', maxUnits:8, per100:{kcal:52,  prot:11,   carb:0.7,  fat:0.2 } },
   { key:'avena',     name:'🌾 Avena (seca)',                     group:'carb',    per100:{kcal:389, prot:16.9, carb:66,   fat:6.9 } },
   { key:'atun',      name:'🐟 Atún en agua (escurrido)',         group:'protein', per100:{kcal:116, prot:26,   carb:0,    fat:0.8 } },
   { key:'aguacate',  name:'🥑 Aguacate',                         group:'fat',     per100:{kcal:160, prot:2,    carb:8.5,  fat:15  } },
@@ -1312,49 +1315,91 @@ function generateMealPlan(profile, targets) {
   };
   if (!sel.protein.length && !sel.carb.length && !sel.fat.length) return null;
 
-  const items = [];
-  let usedProt=0, usedCarb=0, usedFat=0, usedKcal=0;
+  // gramsMap acumula por alimento a través de varias "pasadas": si un alimento tiene
+  // un tope (ej. huevo/clara max 8 unidades/día), al llegar al tope sale del reparto y
+  // lo que faltaba de esa porción se reparte entre los alimentos restantes del grupo.
+  const gramsMap = new Map();
+  let eggCapped = false;
   function allocate(foods, macroKey, targetAmount) {
     if (!foods.length || targetAmount <= 0) return;
-    const share = targetAmount/foods.length;
-    foods.forEach(f => {
-      const per100 = f.per100[macroKey];
-      if (!per100) return;
-      const grams = Math.round((share/per100)*100);
-      if (grams <= 0) return;
-      const mult = grams/100;
-      items.push({ food:f, grams });
-      usedKcal += f.per100.kcal*mult;
-      usedProt += f.per100.prot*mult;
-      usedCarb += f.per100.carb*mult;
-      usedFat  += f.per100.fat*mult;
-    });
+    let pool = foods.slice();
+    let remaining = targetAmount;
+    for (let pass = 0; pass < 5 && pool.length && remaining > 0.5; pass++) {
+      const share = remaining/pool.length;
+      const stillOpen = [];
+      let consumed = 0;
+      pool.forEach(f => {
+        const per100 = f.per100[macroKey];
+        if (!per100) return;
+        let addGrams = (share/per100)*100;
+        const existing = gramsMap.get(f.key) || 0;
+        let capped = false;
+        if (f.maxUnits && f.unitGrams) {
+          const maxG = f.maxUnits*f.unitGrams;
+          if (existing + addGrams >= maxG) { addGrams = Math.max(0, maxG - existing); capped = true; eggCapped = true; }
+        }
+        if (addGrams > 0) { gramsMap.set(f.key, existing + addGrams); consumed += (addGrams/100)*per100; }
+        if (!capped) stillOpen.push(f);
+      });
+      remaining -= consumed;
+      pool = stillOpen;
+    }
   }
+
   allocate(sel.protein, 'prot', targets.protein);
-  allocate(sel.carb, 'carb', Math.max(0, targets.carbs - usedCarb));
-  allocate(sel.fat, 'fat', Math.max(0, targets.fat - usedFat));
+  const carbSoFar = sel.protein.reduce((s,f)=> s + f.per100.carb*((gramsMap.get(f.key)||0)/100), 0);
+  allocate(sel.carb, 'carb', Math.max(0, targets.carbs - carbSoFar));
+  const fatSoFar = [...sel.protein, ...sel.carb].reduce((s,f)=> s + f.per100.fat*((gramsMap.get(f.key)||0)/100), 0);
+  allocate(sel.fat, 'fat', Math.max(0, targets.fat - fatSoFar));
+
+  let items = [...gramsMap.entries()]
+    .map(([key, grams]) => ({ food: FOODS.find(f=>f.key===key), grams: Math.round(grams) }))
+    .filter(it => it.grams > 0);
 
   // Los alimentos de carbos/grasa también aportan algo de proteína (y viceversa),
   // así que se reescala todo por calorías para que el total final no se dispare
-  // por encima de la meta diaria — las cantidades relativas entre alimentos se mantienen.
+  // por encima de la meta diaria — las cantidades relativas entre alimentos se mantienen,
+  // sin pasar el tope de unidades de los alimentos que lo tengan.
+  let usedKcal = items.reduce((s,it)=> s + it.food.per100.kcal*(it.grams/100), 0);
   if (usedKcal > 0 && targets.kcal > 0) {
     const scale = targets.kcal/usedKcal;
-    usedProt = usedCarb = usedFat = usedKcal = 0;
-    items.forEach(it => {
-      it.grams = Math.max(1, Math.round(it.grams*scale));
-      const mult = it.grams/100;
-      usedKcal += it.food.per100.kcal*mult;
-      usedProt += it.food.per100.prot*mult;
-      usedCarb += it.food.per100.carb*mult;
-      usedFat  += it.food.per100.fat*mult;
+    items = items.map(it => {
+      let grams = Math.max(1, Math.round(it.grams*scale));
+      if (it.food.maxUnits && it.food.unitGrams) grams = Math.min(grams, it.food.maxUnits*it.food.unitGrams);
+      return { food: it.food, grams };
     });
   }
+
+  let usedProt=0, usedCarb=0, usedFat=0; usedKcal=0;
+  items.forEach(it => {
+    const mult = it.grams/100;
+    usedKcal += it.food.per100.kcal*mult;
+    usedProt += it.food.per100.prot*mult;
+    usedCarb += it.food.per100.carb*mult;
+    usedFat  += it.food.per100.fat*mult;
+  });
 
   return {
     items,
     totals: { kcal:Math.round(usedKcal), prot:Math.round(usedProt), carb:Math.round(usedCarb), fat:Math.round(usedFat) },
     missingFat: !sel.fat.length && (targets.fat - usedFat) > 8,
+    eggCapped,
   };
+}
+
+// Reparte cada alimento de la dieta entre N comidas, en gramos enteros, sin perder
+// ni sobrar gramos por el redondeo (el resto se reparte 1g extra en las primeras comidas).
+function splitDietIntoMeals(items, mealsCount) {
+  const meals = Array.from({length:mealsCount}, () => []);
+  items.forEach(it => {
+    const base = Math.floor(it.grams/mealsCount);
+    const remainder = it.grams - base*mealsCount;
+    for (let i=0; i<mealsCount; i++) {
+      const grams = base + (i < remainder ? 1 : 0);
+      if (grams > 0) meals[i].push({ food: it.food, grams });
+    }
+  });
+  return meals;
 }
 
 // ============ MOTOR DE PLAN (perfil -> objetivos y rutina) ============
@@ -1422,9 +1467,30 @@ function computeBodyComp(p) {
 function getDailyGoals(profile) {
   if (!profile) return { kcal:2000, protein:150, cardioMin:20, steps:10000 };
   const t = computeTargets(profile);
-  const cardioMin = (profile.goal === 'perder_grasa' || profile.goal === 'recomposicion') ? 30 : 15;
-  const steps = profile.activity === 'sedentario' ? 8000 : 10000;
-  return { kcal:t.kcal, protein:t.protein, cardioMin, steps };
+  const cardio = getCardioPlan(profile);
+  return { kcal:t.kcal, protein:t.protein, cardioMin:cardio.min, steps:cardio.steps };
+}
+
+// Plan de cardio recomendado según objetivo/intensidad: sesiones por semana, minutos,
+// inclinación/velocidad de caminadora (zona 2) y meta de pasos — no es lo que registras,
+// es lo que se sugiere hacer; el registro real se hace aparte y queda como historial.
+const CARDIO_PLAN_PRESETS = {
+  ganar_musculo:         { sessions:2, min:15, incline:5, speed:3.5, steps:9000 },
+  mantener:              { sessions:3, min:20, incline:6, speed:3.8, steps:10000 },
+  recomposicion:         { sessions:4, min:25, incline:7, speed:4.0, steps:10000 },
+  perder_grasa_moderado: { sessions:4, min:30, incline:8, speed:4.0, steps:10000 },
+  perder_grasa_agresivo: { sessions:5, min:40, incline:9, speed:4.2, steps:12000 },
+};
+function getCardioPlan(profile) {
+  if (!profile) return null;
+  const w = getCurrentWeight() || profile.weight;
+  let key = profile.goal;
+  if (profile.goal === 'perder_grasa') key = 'perder_grasa_' + (profile.cutIntensity || 'moderado');
+  const preset = CARDIO_PLAN_PRESETS[key] || CARDIO_PLAN_PRESETS.mantener;
+  const steps = profile.activity === 'sedentario' ? Math.max(8000, preset.steps-1000) : preset.steps;
+  const met = 6; // caminadora inclinada, ritmo zona 2
+  const kcalPerSession = Math.round(met*3.5*w/200 * preset.min);
+  return { ...preset, steps, kcalPerSession, type:'Caminadora inclinada (zona 2)' };
 }
 
 function getCurrentWeight() {
@@ -1700,9 +1766,12 @@ function generarPlan() {
   renderWeight();
   renderCoachCalc();
   renderMealTargets();
+  renderCardioPlanCard();
   renderSummary();
   toast('✓ Tu plan está listo');
 }
+
+const DIET_MEALS_COUNT = 4;
 
 function suggestedDietHtml(p, t) {
   const diet = generateMealPlan(p, t);
@@ -1713,14 +1782,27 @@ function suggestedDietHtml(p, t) {
         <span class="empty-ico">🥗</span>Elige tus alimentos preferidos (proteína, carbos, grasas) en "Editar mi perfil" para que te arme la dieta.
       </div>`;
   }
+  const meals = splitDietIntoMeals(diet.items, DIET_MEALS_COUNT);
+  const shortfall = t.protein - diet.totals.prot;
+  let eggNote = '';
+  if (diet.eggCapped) {
+    eggNote = shortfall > 15
+      ? `<p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">🥚 El huevo/clara se topa en 8 unidades/día — te faltan ~${Math.round(shortfall)}g de proteína. Agrega otra fuente de proteína (pollo, atún, whey) en tu perfil para cubrirlo.</p>`
+      : `<p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">🥚 El huevo/clara se topa en 8 unidades/día — el resto de tu proteína ya sale de tus otras fuentes.</p>`;
+  }
   return `
-    <div class="sub-head">🍽 Tu dieta sugerida — hoy</div>
+    <div class="sub-head">🍽 Tu dieta sugerida — ${DIET_MEALS_COUNT} comidas</div>
+    ${meals.map((meal, i) => !meal.length ? '' : `
+    <div class="chart-card" style="margin-bottom:10px;">
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Comida ${i+1}</div>
+      ${meal.map(it => `<div class="profile-summary-row"><span>${it.food.name}</span><span>${formatFoodQty(it.food, it.grams)}</span></div>`).join('')}
+    </div>`).join('')}
     <div class="chart-card">
-      ${diet.items.map(it => `<div class="profile-summary-row"><span>${it.food.name}</span><span>${formatFoodQty(it.food, it.grams)}</span></div>`).join('')}
-      <div class="profile-summary-row" style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px;"><span>Total aprox.</span><span>${diet.totals.kcal} kcal · ${diet.totals.prot}g P · ${diet.totals.carb}g C · ${diet.totals.fat}g G</span></div>
+      <div class="profile-summary-row"><span>Total del día</span><span>${diet.totals.kcal} kcal · ${diet.totals.prot}g P · ${diet.totals.carb}g C · ${diet.totals.fat}g G</span></div>
     </div>
+    ${eggNote}
     ${diet.missingFat ? '<p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">Te faltan grasas por cubrir — elige una fuente de grasa (aguacate, almendras) en tu perfil.</p>' : ''}
-    <p style="font-size:11px;color:var(--muted);margin:${diet.missingFat?'0':'-8px'} 0 14px;line-height:1.5;">Repártelo en tus comidas del día como prefieras. Ve a 🍗 Comidas para registrarlo con un toque.</p>`;
+    <p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">Cada comida ya trae su porción — ve a 🍗 Comidas para registrarla con un toque.</p>`;
 }
 
 function perfilSummaryHtml(p) {
@@ -1730,6 +1812,7 @@ function perfilSummaryHtml(p) {
   const goalInfo = GOALS.find(g=>g.key===p.goal);
   const actInfo = ACTIVITY_LEVELS.find(a=>a.key===p.activity);
   const supp = supplementStack(p, t);
+  const cardioPlan = getCardioPlan(p);
   return `
     <div class="plan-hero">
       <div class="plan-hero-l">Meta calórica diaria</div>
@@ -1764,6 +1847,13 @@ function perfilSummaryHtml(p) {
         </div>`;
       }).join('')}
     </div>
+    <div class="sub-head">🚶 Cardio recomendado</div>
+    <div class="chart-card">
+      <div class="profile-summary-row"><span>Frecuencia</span><span>${cardioPlan.sessions}x por semana</span></div>
+      <div class="profile-summary-row"><span>Caminadora</span><span>${cardioPlan.min} min · incl. ${cardioPlan.incline}% · vel. ${cardioPlan.speed}</span></div>
+      <div class="profile-summary-row"><span>Meta de pasos diarios</span><span>${cardioPlan.steps.toLocaleString('es')}</span></div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;">Ve a 🔥 Cardio para registrar lo que realmente hiciste — puede ser más o menos que esto.</p>
     <div class="sub-head">💊 Tu stack de suplementos sugerido</div>
     <div class="chart-card">
       ${supp.map(s=>`<div class="profile-summary-row"><span>${s.name}</span><span>${s.dose}</span></div>`).join('')}
@@ -1859,16 +1949,20 @@ function logSuggestedDiet() {
   const t = computeTargets(DATA.profile);
   const diet = generateMealPlan(DATA.profile, t);
   if (!diet || !diet.items.length) return;
+  const meals = splitDietIntoMeals(diet.items, DIET_MEALS_COUNT);
   const day = getDayData();
-  diet.items.forEach((it, i) => {
-    const mult = it.grams/100;
-    day.meals.push({
-      name: `${it.food.name} — ${formatFoodQty(it.food, it.grams)}`,
-      detail: '',
-      kcal: Math.round(it.food.per100.kcal*mult),
-      prot: Math.round(it.food.per100.prot*mult*10)/10,
-      carb: Math.round(it.food.per100.carb*mult*10)/10,
-      id: Date.now()+i,
+  let idc = 0;
+  meals.forEach((meal, mi) => {
+    meal.forEach(it => {
+      const mult = it.grams/100;
+      day.meals.push({
+        name: `${it.food.name} — ${formatFoodQty(it.food, it.grams)} (Comida ${mi+1})`,
+        detail: '',
+        kcal: Math.round(it.food.per100.kcal*mult),
+        prot: Math.round(it.food.per100.prot*mult*10)/10,
+        carb: Math.round(it.food.per100.carb*mult*10)/10,
+        id: Date.now()+(idc++),
+      });
     });
   });
   saveData();
@@ -1961,6 +2055,29 @@ function renderMealLog() {
 }
 
 // ============ CARDIO ============
+function renderCardioPlanCard() {
+  const cont = document.getElementById('cardioPlanCard');
+  if (!cont) return;
+  if (!DATA.profile) { cont.innerHTML = perfilCtaCard('Completa tu perfil para generar tu cardio recomendado.'); return; }
+  const plan = getCardioPlan(DATA.profile);
+  cont.innerHTML = `
+    <div class="wo-card">
+      <div class="wo-day-tag">${plan.sessions}x por semana</div>
+      <div class="wo-name" style="font-size:20px;">${plan.type}</div>
+      <div class="wo-muscles">Inclinación ${plan.incline}% · velocidad ${plan.speed} · ${plan.min} min/sesión · ~${plan.kcalPerSession} kcal</div>
+      <div class="wo-muscles">Meta de pasos diarios: ${plan.steps.toLocaleString('es')}</div>
+      <button class="wo-btn todo" onclick="fillRecommendedCardio()">Registrar esta sesión</button>
+    </div>`;
+}
+function fillRecommendedCardio() {
+  const plan = getCardioPlan(DATA.profile);
+  if (!plan) return;
+  document.getElementById('cardioName').value = plan.type;
+  document.getElementById('cardioMin').value = plan.min;
+  document.getElementById('cardioKcal').value = plan.kcalPerSession;
+  document.getElementById('cardioName').scrollIntoView({behavior:'smooth', block:'center'});
+  toast('Ajusta minutos/kcal si hiciste más o menos, y presiona Añadir cardio');
+}
 function renderCardioQuick() {
   const cont = document.getElementById('cardioQuick');
   cont.innerHTML = PLAN_CARDIO.map((c,i) => `
@@ -2423,6 +2540,7 @@ function renderAll() {
   renderFoodOptions();
   renderMealTargets();
   renderMealLog();
+  renderCardioPlanCard();
   renderCardioQuick();
   renderCardioLog();
   renderWorkoutPanel();
